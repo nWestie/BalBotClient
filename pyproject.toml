@@ -1,0 +1,14 @@
+[tool.pdm]
+
+[project]
+name = ""
+version = ""
+description = ""
+authors = [
+    {name = "Noah West", email = "westnoahb@gmail.com"},
+]
+dependencies = [
+    "kivy>=2.1.0",
+]
+requires-python = ">=3.10"
+license = {text = "MIT"}
