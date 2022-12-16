@@ -1,0 +1,20 @@
+<LoginScreen>
+    Label:
+        text: user.text
+        center_x: self.parent.center_x
+        top: root.top
+    GridLayout:
+        cols: 2
+        size: .5*root.width, .4 * root.height
+        center_x: root.center_x
+        Label:
+            text:'User Name'
+        TextInput:
+            id: user
+            multiline: False
+        Label:
+            text: "Password"
+        TextInput:
+            multiline: False
+            password: True
+            
