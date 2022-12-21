@@ -1,20 +1,76 @@
+
+<MyLabel@MDLabel>:
+    size_hint: 1, None
+    size: self.texture_size
+    halign: 'center'
+    padding_y: 10
+    font_size: 20
+    
+<MyTextInput@TextInput>:
+    size_hint: .7, None
+    font_size: 20
+    halign: 'center'
+    padding_y: 10
+    height: self.line_height + sum(self.padding_y)
+    multiline: False
+    write_tab: False
+    pos_hint: {'center_x': .5}
+<MySlider@MDSlider>:
+    min:0
+    max:100
+    value:50
+    orientation:'vertical'
+    padding: 10
+    hint: False
+<MyToggle>
+    # size_hint: 1,.5
+    background_down: self.theme_cls.primary_color
+
 <LoginScreen>
-    Label:
-        text: user.text
-        center_x: self.parent.center_x
-        top: root.top
-    GridLayout:
-        cols: 2
-        size: .5*root.width, .4 * root.height
-        center_x: root.center_x
-        Label:
-            text:'User Name'
-        TextInput:
-            id: user
-            multiline: False
-        Label:
-            text: "Password"
-        TextInput:
-            multiline: False
-            password: True
+    AnchorLayout:
+        anchor_y: 'bottom'
+        anchor_x: 'center'
+        size: root.size
+        padding: 0,0,0,20
+        BoxLayout:
+            spacing: 5
+            orientation:'vertical'
+            size_hint: .4, None
+            MyLabel:
+                text:'User Name'
+            MyTextInput:
+                id: user
+            MyLabel:
+                text: "Password"
+            MyTextInput:
+                id: password
+                password: True
+    AnchorLayout:
+        size: root.size
+        anchor_x: 'left'
+        anchor_y: 'top'
+        GridLayout:
+            rows: 5
+            cols: 1
+            size_hint: .3,.5
+            MyToggle:
+                id: bttn
+                text: "DarkMode"
+            MyToggle:
+                id: bttn
+                text: "Testing2"
+    AnchorLayout:
+        size: root.size
+        anchor_x: 'right'
+        anchor_y: 'top'
+        BoxLayout:
+            size_hint: .5,.5
+            orientation: 'horizontal'
+            spacing: .07*self.width
+            MySlider:
+                id: s1
+            MySlider:
+                id: s2
+            MySlider:
+                id: s3
             

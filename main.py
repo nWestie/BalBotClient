@@ -1,12 +1,22 @@
-from kivy.app import App
-from kivy.uix.gridlayout import GridLayout
+from kivymd.app import MDApp
+from kivymd.uix.widget import MDWidget
+from kivymd.uix.button import MDFlatButton
+from kivymd.uix.behaviors.toggle_behavior import MDToggleButton
 
 
-class LoginScreen(GridLayout):
+class LoginScreen(MDWidget):
     pass
 
-class MainApp(App):
+
+class MyToggle(MDFlatButton, MDToggleButton):
+    pass
+
+
+class MainApp(MDApp):
     def build(self):
+        self.theme_cls.theme_style = "Dark"
+        self.theme_cls.primary_palette = "Orange"
+        self.theme_cls.theme_style_switch_animation: True
         return LoginScreen()
 
 
