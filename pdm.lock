@@ -107,6 +107,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "pyserial"
+version = "3.5"
+summary = "Python Serial Port Extension"
+
+[[package]]
 name = "pywin32"
 version = "305"
 summary = "Python for Window Extensions"
@@ -137,7 +142,7 @@ summary = "HTTP library with thread-safe connection pooling, file post, and more
 
 [metadata]
 lock_version = "4.1"
-content_hash = "sha256:b3936e49e1dfee34aabf5691b632003a1e9140798b7df10bae3b4ec2912836d3"
+content_hash = "sha256:40601f13afeb4556985f216b20dcb038c7d9d5ebf3c94daa4920ed7e84f64415"
 
 [metadata.files]
 "autopep8 2.0.1" = [
@@ -297,6 +302,10 @@ content_hash = "sha256:b3936e49e1dfee34aabf5691b632003a1e9140798b7df10bae3b4ec29
 "pypiwin32 223" = [
     {url = "https://files.pythonhosted.org/packages/13/e8/4f38eb30c4dae36634a53c5b2cd73b517ea3607e10d00f61f2494449cec0/pypiwin32-223.tar.gz", hash = "sha256:71be40c1fbd28594214ecaecb58e7aa8b708eabfa0125c8a109ebd51edbd776a"},
     {url = "https://files.pythonhosted.org/packages/d0/1b/2f292bbd742e369a100c91faa0483172cd91a1a422a6692055ac920946c5/pypiwin32-223-py3-none-any.whl", hash = "sha256:67adf399debc1d5d14dffc1ab5acacb800da569754fafdc576b2a039485aa775"},
+]
+"pyserial 3.5" = [
+    {url = "https://files.pythonhosted.org/packages/07/bc/587a445451b253b285629263eb51c2d8e9bcea4fc97826266d186f96f558/pyserial-3.5-py2.py3-none-any.whl", hash = "sha256:c4451db6ba391ca6ca299fb3ec7bae67a5c55dde170964c7a14ceefec02f2cf0"},
+    {url = "https://files.pythonhosted.org/packages/1e/7d/ae3f0a63f41e4d2f6cb66a5b57197850f919f59e558159a4dd3a818f5082/pyserial-3.5.tar.gz", hash = "sha256:3c77e014170dfffbd816e6ffc205e9842efb10be9f58ec16d3e8675b4925cddb"},
 ]
 "pywin32 305" = [
     {url = "https://files.pythonhosted.org/packages/02/80/23fdb88f8a398dff615f10100cf54871fd8518e3eeea72c1a7d46af01bf9/pywin32-305-cp310-cp310-win_amd64.whl", hash = "sha256:73e819c6bed89f44ff1d690498c0a811948f73777e5f97c494c152b850fad478"},
