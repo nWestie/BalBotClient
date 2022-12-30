@@ -1,3 +1,4 @@
 {
-    "explorer.autoReveal": false
+    "explorer.autoReveal": false,
+    "python.analysis.typeCheckingMode": "basic"
 }

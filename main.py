@@ -16,7 +16,7 @@ class MainApp(MDApp):
     def build(self):
         self.theme_cls.theme_style = "Dark"
         self.theme_cls.primary_palette = "Orange"
-        self.theme_cls.theme_style_switch_animation: True
+        self.theme_cls.theme_style_switch_animation = True
         return LoginScreen()
 
 
