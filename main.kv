@@ -1,76 +1,135 @@
 
-<MyLabel@MDLabel>:
-    size_hint: 1, None
-    size: self.texture_size
-    halign: 'center'
-    padding_y: 10
-    font_size: 20
-    
-<MyTextInput@TextInput>:
-    size_hint: .7, None
-    font_size: 20
-    halign: 'center'
-    padding_y: 10
-    height: self.line_height + sum(self.padding_y)
-    multiline: False
-    write_tab: False
-    pos_hint: {'center_x': .5}
-<MySlider@MDSlider>:
+<SprungSlider>:
+    sliderVal: sVal
+    sliderVal: 50
     min:0
     max:100
-    value:50
+    value: self.sliderVal+10
     orientation:'vertical'
     padding: 10
-    hint: False
-<MyToggle>
-    # size_hint: 1,.5
-    background_down: self.theme_cls.primary_color
+    value_track_width: '5dp'
+    on_touch_up: self.sliderReleased()
 
-<LoginScreen>
-    AnchorLayout:
-        anchor_y: 'bottom'
-        anchor_x: 'center'
+
+<PIDButton>:
+    background_down: self.theme_cls.primary_dark
+    group: 'pid'
+    size_hint: .25,1
+    line_width: '2dp'
+    text: ""
+    on_press: self.pressed(self.text)
+
+<PIDRadioGroup@MDBoxLayout>
+    group_id: 'pidRadio'
+    orientation: 'horizontal'
+    size_hint: 1, None
+    height: '45dp'
+    padding: '5dp'
+    PIDButton:
+        text: "5"
+    PIDButton:
+        text: "1"
+        state: "down"
+    PIDButton:
+        text: ".1"
+    PIDButton:
+        text: ".01"
+
+
+    
+    
+<NumSpinner@MDBoxLayout>
+    name: ""
+    value: value
+    value: 10.0
+
+    size_hint: None, None
+    adaptive_width: True
+    pos_hint: {'right': 1}
+    orientation: 'horizontal'
+    padding: '5dp'
+    height: '75dp'
+    spacing: '5dp'
+    MDLabel:
+        size_hint: None, 1
+        valign: 'center'
+        halign: 'right'
+        font_size: '20dp'
+        text: self.parent.name + ": "
+    TextInput:
+        size_hint: None, None
+        halign: 'center'
+        pos_hint: {'center_y': .5}
+        padding_y: '7dp'
+        height: self.line_height+sum(self.padding_y)
+
+        font_size: 20
+        multiline: False
+        write_tab: False
+        input_filter: 'float'
+        text: "{0:.3f}".format(root.value)
+        on_text: root.textUpdated(self.text)
+    MDBoxLayout:
+        adaptive_width: True
+        orientation: 'vertical'
+        size_hint: None, 1
+        spacing: '3dp'
+        MDFloatingActionButton:
+            icon: 'chevron-up'
+            size_hint: 1, .5
+            on_press: root.plusPressed()
+        MDFloatingActionButton:
+            icon: 'chevron-down'
+            size_hint: 1, .5
+            on_press: root.minusPressed()
+
+<LoginScreen@Screen>
+    MDAnchorLayout:
         size: root.size
-        padding: 0,0,0,20
-        BoxLayout:
-            spacing: 5
-            orientation:'vertical'
-            size_hint: .4, None
-            MyLabel:
-                text:'User Name'
-            MyTextInput:
-                id: user
-            MyLabel:
-                text: "Password"
-            MyTextInput:
-                id: password
-                password: True
+        anchor_x: 'right'
+        anchor_y: 'bottom'
+        padding: '20dp'
+        MDBoxLayout:
+            orientation: 'vertical'
+            size_hint: .4, 1
+            adaptive_height: True
+
+            PIDRadioGroup:
+            NumSpinner:
+                name: "Trim"
+                value: 0
+                padding: '5dp','15dp','5dp','15dp'
+                height: '90dp'
+
+            NumSpinner:
+                name: "kP"
+                value: 1.0
+            NumSpinner:
+                name: 'kI'
+                value: 2.0
+            NumSpinner:
+                name: 'kD'
+                value: 3.0
+            MDBoxLayout:
+                size_hint: 1, 1
+                adaptive_height: True
+                adaptive_width: True
+                orientation: 'horizontal'
+                pos_hint: {'right': 1}
+                MDRaisedButton:
+                    # size_hint: None, 1
+                    text: 'SEND PID'
+                MDRaisedButton:
+                    # size_hint: None, 1
+                    text: 'SAVE PID'
+                    md_bg_color: self.theme_cls.primary_dark
     AnchorLayout:
         size: root.size
         anchor_x: 'left'
-        anchor_y: 'top'
-        GridLayout:
-            rows: 5
-            cols: 1
-            size_hint: .3,.5
-            MyToggle:
-                id: bttn
-                text: "DarkMode"
-            MyToggle:
-                id: bttn
-                text: "Testing2"
-    AnchorLayout:
-        size: root.size
-        anchor_x: 'right'
-        anchor_y: 'top'
+        anchor_y: 'center'
         BoxLayout:
-            size_hint: .5,.5
+            size_hint: .25,.5
             orientation: 'horizontal'
             spacing: .07*self.width
-            MySlider:
-                id: s1
-            MySlider:
-                id: s2
-            MySlider:
-                id: s3
-            
+            SprungSlider:
+               
