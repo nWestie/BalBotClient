@@ -1,14 +1,12 @@
 
 <SprungSlider>:
-    sliderVal: sVal
-    sliderVal: 50
     min:0
     max:100
-    value: self.sliderVal+10
+    value: 50
     orientation:'vertical'
     padding: 10
     value_track_width: '5dp'
-    on_touch_up: self.sliderReleased()
+    on_active: self.sliderReleased()
 
 
 <PIDButton>:

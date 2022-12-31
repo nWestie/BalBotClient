@@ -4,19 +4,16 @@ from kivymd.uix.button import MDFlatButton, MDRectangleFlatButton
 from kivymd.uix.behaviors.toggle_behavior import MDToggleButton
 from kivy.properties import ObjectProperty, NumericProperty, StringProperty
 from kivymd.uix.boxlayout import MDBoxLayout
-from kivy.uix.slider import Slider
+from kivymd.uix.slider import MDSlider
 
 
 class LoginScreen(MDWidget):
     pass
-class SprungSlider(Slider):
-    sVal = NumericProperty(None)
+class SprungSlider(MDSlider):
 
     def sliderReleased(self):
-        print(self.sVal)
-        self.sVal +=10
-
-    
+        if(not self.active):
+            self.value = 50    
 pidStep = 1
 class PIDButton(MDRectangleFlatButton, MDToggleButton):
     def pressed(self, buttonText: str):
@@ -39,6 +36,7 @@ class NumSpinner(MDBoxLayout):
     value = NumericProperty(None)
 
     def plusPressed(self):
+        print(self.value)
         self.value += pidStep
 
     def minusPressed(self):
