@@ -5,38 +5,43 @@ from kivymd.uix.behaviors.toggle_behavior import MDToggleButton
 from kivy.properties import ObjectProperty, NumericProperty, StringProperty
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.slider import MDSlider
+from kivy.core.window import Window
 
-
-class LoginScreen(MDWidget):
-    pass
 class SprungSlider(MDSlider):
 
     def sliderReleased(self):
         if(not self.active):
-            self.value = 50    
+            self.value = 0    
 pidStep = 1
 class PIDButton(MDRectangleFlatButton, MDToggleButton):
     def pressed(self, buttonText: str):
         global pidStep
         pidStep = float(buttonText)
 
-
+class ControllerMain(MDWidget):
+    pObj = ObjectProperty(None)
+    iObj = ObjectProperty(None)
+    dObj = ObjectProperty(None)
+    trimObj = ObjectProperty(None)
+    
+    def sendPID(self):
+        print(self.pObj.value, self.iObj.value, self.dObj.value)
+    def savePID(self):
+        print(self.pObj.value, self.iObj.value, self.dObj.value)
 
 class MainApp(MDApp):
     def build(self):
         self.theme_cls.theme_style = "Dark"
-        self.theme_cls.primary_palette = "Purple"
+        self.theme_cls.primary_palette = "Teal"
         self.theme_cls.primary_hue = '600'
-        self.theme_cls.primary_dark_hue = '900'
+        self.theme_cls.primary_dark_hue = '800'
         self.theme_cls.primary_light_hue = '400'
         self.theme_cls.accent_palette = "Orange"
-        return LoginScreen()
+        return ControllerMain()
 
 class NumSpinner(MDBoxLayout):
-    value = NumericProperty(None)
 
     def plusPressed(self):
-        print(self.value)
         self.value += pidStep
 
     def minusPressed(self):
@@ -47,4 +52,6 @@ class NumSpinner(MDBoxLayout):
 
 
 if __name__ == "__main__":
+    Window.custom_titlebar = True
+    Window.maximize()
     MainApp().run()

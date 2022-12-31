@@ -1,8 +1,8 @@
 
 <SprungSlider>:
-    min:0
+    min:-100
     max:100
-    value: 50
+    value: 0
     orientation:'vertical'
     padding: 10
     value_track_width: '5dp'
@@ -14,6 +14,7 @@
     group: 'pid'
     size_hint: .25,1
     line_width: '2dp'
+    line_color: app.theme_cls.primary_light
     text: ""
     on_press: self.pressed(self.text)
 
@@ -21,8 +22,9 @@
     group_id: 'pidRadio'
     orientation: 'horizontal'
     size_hint: 1, None
-    height: '45dp'
+    height: '50dp'
     padding: '5dp'
+    spacing: '8dp'
     PIDButton:
         text: "5"
     PIDButton:
@@ -32,13 +34,9 @@
         text: ".1"
     PIDButton:
         text: ".01"
-
-
-    
     
 <NumSpinner@MDBoxLayout>
     name: ""
-    value: value
     value: 10.0
 
     size_hint: None, None
@@ -46,7 +44,7 @@
     pos_hint: {'right': 1}
     orientation: 'horizontal'
     padding: '5dp'
-    height: '75dp'
+    height: '80dp'
     spacing: '5dp'
     MDLabel:
         size_hint: None, 1
@@ -72,6 +70,7 @@
         orientation: 'vertical'
         size_hint: None, 1
         spacing: '3dp'
+        width: '60dp'
         MDFloatingActionButton:
             icon: 'chevron-up'
             size_hint: 1, .5
@@ -81,7 +80,11 @@
             size_hint: 1, .5
             on_press: root.minusPressed()
 
-<LoginScreen@Screen>
+<ControllerMain>
+    pObj: pObj
+    iObj: iObj
+    dObj: dObj
+    trimObj: trimObj
     MDAnchorLayout:
         size: root.size
         anchor_x: 'right'
@@ -89,38 +92,47 @@
         padding: '20dp'
         MDBoxLayout:
             orientation: 'vertical'
-            size_hint: .4, 1
+            size_hint: None, 1
+            width: '300dp'
             adaptive_height: True
 
             PIDRadioGroup:
             NumSpinner:
+                id: trimObj
                 name: "Trim"
                 value: 0
                 padding: '5dp','15dp','5dp','15dp'
                 height: '90dp'
 
             NumSpinner:
+                id: pObj
                 name: "kP"
                 value: 1.0
             NumSpinner:
+                id: iObj
                 name: 'kI'
                 value: 2.0
             NumSpinner:
+                id: dObj
                 name: 'kD'
                 value: 3.0
             MDBoxLayout:
-                size_hint: 1, 1
-                adaptive_height: True
+                size_hint: 1, None
                 adaptive_width: True
+                height: '60dp'
                 orientation: 'horizontal'
                 pos_hint: {'right': 1}
+                spacing: '7dp'
+                padding: '7dp'
                 MDRaisedButton:
-                    # size_hint: None, 1
+                    size_hint: None, 1
                     text: 'SEND PID'
+                    on_press: root.sendPID()
                 MDRaisedButton:
-                    # size_hint: None, 1
+                    size_hint: None, 1
                     text: 'SAVE PID'
                     md_bg_color: self.theme_cls.primary_dark
+                    on_press: root.savePID()
     AnchorLayout:
         size: root.size
         anchor_x: 'left'
