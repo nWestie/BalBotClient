@@ -1,10 +1,11 @@
 import serial
 import time
-
+import threading
 
 class BTHandler:
-    def __init__(self, port: str) -> None:
+    def __init__(self, port: str):
         self.btDataStr = ""
+        self.port = port
         self.btRecData = {
             "voltage": 0,
             "setAngle": 90,
@@ -14,20 +15,34 @@ class BTHandler:
             "d": 0,
             "message": ""
         }
-        self.bt = serial.Serial(port=port, baudrate=38400)
-        # for i in range(3):
-        #     try:
-        #     except:
-        #         if i == 2:
-        #             exit("Bluetooth Connection Failed, exiting...")
-        #         print("Bluetooth Connection Error, retrying...")
+        self.connected = False
 
-    def readBT(self) -> None:
-        numBytes = self.bt.in_waiting
-        if numBytes > 0:
-            self.btDataStr = self.btDataStr + self.bt.read(numBytes).decode()
+    def connect(self):
+        try:
+            print('connecting...')
+            self.bt = serial.Serial(port=self.port, baudrate=38400)
+            self.connected = True
+            print('connected')
+        except:
+            print("Bluetooth Connection Error")
+            # if (self.bt):
+            #     self.bt.close()
+            #     del self.bt
+            self.connected = False
+        return self.connected
 
-    def parse(self):
+    def disconnect(self):
+        try:
+            print('disconnecting')
+            self.bt.close()
+            self.connected = False
+            print("Closed BT COM Port")
+            return True
+        except:
+            print("Error Closing BT connection")
+            return False
+
+    def parseBtData(self):
         data = self.btDataStr
         if len(data) == 0:
             return
@@ -66,21 +81,24 @@ class BTHandler:
     def _parseM(self, packet: str):
         self.btRecData["message"] = packet[1:-1]
 
-
-def __del__(self):
-    self.bt.close()
-    print("closed BT COM Port")
-
-
+    def readBT(self):
+        if (not self.connected):
+            return
+        numBytes = self.bt.in_waiting
+        if numBytes > 0:
+            self.btDataStr = self.btDataStr + self.bt.read(numBytes).decode()
+    
 if __name__ == "__main__":
     bt = BTHandler("COM8")
     # bt.btDataStr = "123.45/Mabcdefg/P23.45,12,45/U12.5,13.45,0.45/"
-
+    while (not bt.connected):
+        input("Press enter to attempt BT connection")
+        print("connecting...")
+        bt.connect()
     endTime = time.time()+20
     while time.time() < endTime:
         bt.readBT()
-        bt.parse()
         print(bt.btRecData)
         time.sleep(1/10)
-    
+
     del bt

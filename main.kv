@@ -1,50 +1,39 @@
 
+<Toggle>:
+    line_width: '2dp'
+
 <SprungSlider>:
-    min:-100
-    max:100
-    value: 0
     orientation:'vertical'
-    padding: 10
-    value_track_width: '5dp'
+    size_hint: None, None
+    size: '80dp', '500dp'
+    
+    range: -100, 100
+    value: 0
     on_active: self.sliderReleased()
 
 
-<PIDButton>:
+<StepButton@Toggle>:
+    md_bg_color: self.theme_cls.primary_color
+    background_normal: self.theme_cls.primary_color
     background_down: self.theme_cls.primary_dark
-    group: 'pid'
+    text_color: 'black'
+    font_color_normal: 'black'
+    line_color: app.theme_cls.primary_color
+    group: 'step'
     size_hint: .25,1
-    line_width: '2dp'
-    line_color: app.theme_cls.primary_light
-    text: ""
-    on_press: self.pressed(self.text)
+    rounded_button: True
+    text: ""    
 
-<PIDRadioGroup@MDBoxLayout>
-    group_id: 'pidRadio'
-    orientation: 'horizontal'
-    size_hint: 1, None
-    height: '50dp'
-    padding: '5dp'
-    spacing: '8dp'
-    PIDButton:
-        text: "5"
-    PIDButton:
-        text: "1"
-        state: "down"
-    PIDButton:
-        text: ".1"
-    PIDButton:
-        text: ".01"
-    
+
 <NumSpinner@MDBoxLayout>
     name: ""
     value: 10.0
-
     size_hint: None, None
     adaptive_width: True
     pos_hint: {'right': 1}
     orientation: 'horizontal'
     padding: '5dp'
-    height: '80dp'
+    height: '100dp'
     spacing: '5dp'
     MDLabel:
         size_hint: None, 1
@@ -70,7 +59,7 @@
         orientation: 'vertical'
         size_hint: None, 1
         spacing: '3dp'
-        width: '60dp'
+        width: '80dp'
         MDFloatingActionButton:
             icon: 'chevron-up'
             size_hint: 1, .5
@@ -80,12 +69,17 @@
             size_hint: 1, .5
             on_press: root.minusPressed()
 
+
 <ControllerMain>
     pObj: pObj
     iObj: iObj
     dObj: dObj
     trimObj: trimObj
-    MDAnchorLayout:
+    enableObj: enableObj
+    connectBtn: connectBtn
+    btStatus: btStatus
+    step: 1
+    MDAnchorLayout: #PID/Trim controls
         size: root.size
         anchor_x: 'right'
         anchor_y: 'bottom'
@@ -93,52 +87,117 @@
         MDBoxLayout:
             orientation: 'vertical'
             size_hint: None, 1
-            width: '300dp'
-            adaptive_height: True
-
-            PIDRadioGroup:
+            width: '350dp'
+            # adaptive_height: True
+            MDBoxLayout:
+                orientation: 'horizontal'
+                size_hint: 1, None
+                height: '60dp'
+                padding: '5dp'
+                spacing: '8dp'
+                StepButton:
+                    text: "5"
+                    on_press: root.stepPressed(self.text)
+                StepButton:
+                    text: "1"
+                    state: "down"
+                    on_press: root.stepPressed(self.text)
+                StepButton:
+                    text: ".1"
+                    on_press: root.stepPressed(self.text)
+                StepButton:
+                    text: ".01"
+                    on_press: root.stepPressed(self.text)
             NumSpinner:
                 id: trimObj
                 name: "Trim"
                 value: 0
-                padding: '5dp','15dp','5dp','15dp'
-                height: '90dp'
-
+                padding: '7dp','15dp'
+                height: "115dp"
+                step: root.step
             NumSpinner:
                 id: pObj
                 name: "kP"
                 value: 1.0
+                step: root.step
             NumSpinner:
                 id: iObj
                 name: 'kI'
                 value: 2.0
+                step: root.step
             NumSpinner:
                 id: dObj
                 name: 'kD'
                 value: 3.0
+                step: root.step
             MDBoxLayout:
-                size_hint: 1, None
+                size_hint: .5, None
                 adaptive_width: True
-                height: '60dp'
+                height: '80dp'
                 orientation: 'horizontal'
                 pos_hint: {'right': 1}
                 spacing: '7dp'
                 padding: '7dp'
                 MDRaisedButton:
-                    size_hint: None, 1
+                    size_hint: .5, 1
                     text: 'SEND PID'
                     on_press: root.sendPID()
                 MDRaisedButton:
-                    size_hint: None, 1
+                    size_hint: .5, 1
                     text: 'SAVE PID'
-                    md_bg_color: self.theme_cls.primary_dark
+                    # md_bg_color: self.theme_cls.primary_dark
                     on_press: root.savePID()
-    AnchorLayout:
+    
+    AnchorLayout: #Top Right controls
+        size: root.size
+        anchor_x: 'right'
+        anchor_y: 'top'
+        padding: '25dp'
+        spacing: '10dp'
+        MDBoxLayout:
+            spacing: '10dp'
+            orientation: 'vertical'
+            adaptive_size: True
+            Toggle:
+                id: enableObj
+                text: 'ENABLE'
+                font_size: 70
+                on_state: root.enablePressed(self.state)
+            Toggle:
+                id: connectBtn
+                pos_hint: {'right':1}
+                text: 'Connect'
+                font_size: 30
+                line_width: '2dp'
+                on_release: root.connectPressed(self.state)
+            MDBoxLayout:
+                id: btStatus
+                adaptive_size: True
+                orientation: 'horizontal'
+                pos_hint: {'right':1}
+                spacing: '10dp'
+
+                text: ''
+                working: False
+                MDLabel:
+                    pos_hint: {'center_y': .5}
+                    text: btStatus.text
+                    adaptive_size: True
+                    font_size: 15
+                    color: 'lightslategray'
+                MDSpinner:
+                    active: btStatus.working
+                    size_hint: None, None
+                    size: dp(20), dp(20)
+                    color: 'lightslategray'
+
+    AnchorLayout: #Speed Slider
         size: root.size
         anchor_x: 'left'
-        anchor_y: 'center'
-        BoxLayout:
-            size_hint: .25,.5
+        anchor_y: 'bottom'
+        padding: '150dp', '100dp'
+        MDBoxLayout:
+            adaptive_size: True
             orientation: 'horizontal'
             spacing: .07*self.width
             SprungSlider:
