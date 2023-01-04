@@ -28,6 +28,7 @@
 <NumSpinner@MDBoxLayout>
     name: ""
     value: 10.0
+    min: 0
     size_hint: None, None
     adaptive_width: True
     pos_hint: {'right': 1}
@@ -75,10 +76,12 @@
     iObj: iObj
     dObj: dObj
     trimObj: trimObj
+    speedObj: speedObj
     enableObj: enableObj
     connectBtn: connectBtn
     btStatus: btStatus
     step: 1
+
     MDAnchorLayout: #PID/Trim controls
         size: root.size
         anchor_x: 'right'
@@ -112,6 +115,7 @@
                 id: trimObj
                 name: "Trim"
                 value: 0
+                min: -90
                 padding: '7dp','15dp'
                 height: "115dp"
                 step: root.step
@@ -145,7 +149,6 @@
                 MDRaisedButton:
                     size_hint: .5, 1
                     text: 'SAVE PID'
-                    # md_bg_color: self.theme_cls.primary_dark
                     on_press: root.savePID()
     
     AnchorLayout: #Top Right controls
@@ -177,7 +180,7 @@
                 pos_hint: {'right':1}
                 spacing: '10dp'
 
-                text: ''
+                text: 'Disconnected'
                 working: False
                 MDLabel:
                     pos_hint: {'center_y': .5}
@@ -201,4 +204,4 @@
             orientation: 'horizontal'
             spacing: .07*self.width
             SprungSlider:
-               
+                id: speedObj

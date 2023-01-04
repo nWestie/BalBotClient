@@ -26,68 +26,86 @@ class ControllerMain(MDWidget):
     iObj = ObjectProperty(None)
     dObj = ObjectProperty(None)
     trimObj = ObjectProperty(None)
+    speedObj = ObjectProperty(None)
     enableObj = ObjectProperty(None)
     connectBtn = ObjectProperty(None)
     btStatus = ObjectProperty(None)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.btHandler = BTHandler.BTHandler("COM8")
+        self.btHandler = BTHandler.BTHandler("COM8", 1/20)
+        Clock.schedule_interval(self.regularBT, 1/22)
+
+    def regularBT(self, dt):
+        if (self.btStatus.working):
+            status = self.btHandler.connectionStatus()
+            if (status):
+                self.btStatus.working = False
+                self.btStatus.text = status
+                if status.lower().find("error") != -1:
+                    self.connectBtn.disabled = False
+                    self.connectBtn.text = 'Connect'
+                    self.connectBtn.state = 'normal'
+                else:
+                    self.connectBtn.text = 'Disconnect' if self.connectBtn.state == 'down' else 'Connect'
+                    self.connectBtn.disabled = False
+        enabled = True if self.enableObj.state == 'down' else False
+        self.btHandler.set(speed=self.speedObj.value,
+                           trim=self.trimObj.value, enable=enabled)
 
     def sendPID(self):
-        print(self.pObj.value, self.iObj.value, self.dObj.value)
+        self.btHandler.set(p=self.pObj.value,
+                           i=self.iObj.value, d=self.dObj.value)
+        self.btHandler.set(sendPID=True)
+        print('sendPID')
 
     def savePID(self):
-        print(self.pObj.value, self.iObj.value, self.dObj.value)
+        self.btHandler.set(p=self.pObj.value,
+                           i=self.iObj.value, d=self.dObj.value)
+        self.btHandler.set(savePID=True)
+        print('savePID')
 
     def enablePressed(self, state):
-        print(state)  # 'normal' or 'down'
+        val = True if state == 'down' else False
+        self.btHandler.set(enable=val)
+        print('enable')  # 'normal' or 'down'
 
     def stepPressed(self, buttonText: str):
         self.step = float(buttonText)
 
     def connectPressed(self, state):
         print(state)
+        self.connectBtn.disabled = True
+        self.btStatus.working = True
         if (state == 'down'):
-            self.btStatus.text = "Connecting..."
-            self.btStatus.working = True
+            self.btHandler.requestConnect()
             self.connectBtn.text = "Disconnect"
-            if (self.btHandler.connect()):
-                self.btStatus.text = "Connected on " + self.btHandler.port
-            else:
-                self.btStatus.text = "Connection Error"
-                self.connectBtn.state = 'normal'
-                self.connectBtn.text = "Connect"
-            self.btStatus.working = False
+            self.btStatus.text = "Connecting..."
         elif (state == 'normal'):
-            self.connectBtn.disabled = True
+            self.btHandler.requestConnect(disconnect=True)
             self.btStatus.text = "disconnecting..."
-            self.btStatus.working = True
-            if (self.btHandler.disconnect()):
-                self.connectBtn.text = "Connect"
-                self.btStatus.working = False
-                self.btStatus.text = ''
-            else:
-                self.btStatus.working = False
-                self.btStatus.text = 'Failed to Disconnect'
-                self.connectBtn.text = 'Disconnect'
-                # self.connectBtn.state = 'down'
-            self.connectBtn.disabled = False
 
 
 class MainApp(MDApp):
     def build(self):
+        self.title = "Balance Bot Controller"
         self.theme_cls.theme_style = "Dark"
         self.theme_cls.primary_palette = "Teal"
         self.theme_cls.primary_hue = '600'
         self.theme_cls.primary_dark_hue = '900'
         self.theme_cls.primary_light_hue = '400'
         self.theme_cls.accent_palette = "DeepPurple"
-        return ControllerMain()
+
+        self.controller = ControllerMain()
+        return self.controller
+
+    def on_stop(self):
+        self.controller.btHandler.exit()
 
 
 class NumSpinner(MDBoxLayout):
     step = NumericProperty(1)
+    min = NumericProperty(1)
 
     def plusPressed(self):
         self.value += self.step
@@ -96,7 +114,7 @@ class NumSpinner(MDBoxLayout):
         self.value -= self.step
 
     def textUpdated(self, str):
-        self.value = max(float(str), 0)
+        self.value = max(float(str), self.min)
 
 
 if __name__ == "__main__":
