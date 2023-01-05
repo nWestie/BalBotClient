@@ -16,14 +16,13 @@ class BTHandler:
         self._requestExit = False
         self._toController = {
             'voltage': 0,
-            'setAngle': 90,
-            'actualAngle': 90,
+            'logs': [],
             'p': -1,
             'i': -1,
             'd': -1,
             'PIDenable': False,
             'isEnabled': False,
-            'message': ''
+            'messages': []
         }
         self._fromController = {
             'speed': 0,
@@ -41,7 +40,7 @@ class BTHandler:
         self._btRecieveStr = ""
         # Start handler Thread
         self.loopSpeed = loopSpeed
-        self.workerThread = Thread(target=self.btWorker)
+        self.workerThread = Thread(target=self._btWorker)
         self.workerThread.start()
 
     def getMany(self, *args):
@@ -62,7 +61,14 @@ class BTHandler:
             for key, val in kwargs.items():
                 if key in self._fromController.keys():
                     self._fromController[key] = val
-
+    def clearLists(self, *args):
+        if len(args) == 0:
+            args = ['messages', 'logs']
+        with self.lock:
+            for listName in args:
+                if listName in self._toController.keys():
+                    self._toController[listName] = []
+        
     def requestConnect(self, disconnect=False):
         with self.lock:
             self._requestConnect = not disconnect
@@ -78,7 +84,7 @@ class BTHandler:
             self._requestExit = True
         self.workerThread.join()
 
-    def btWorker(self):
+    def _btWorker(self):
         """Control loop that runs in a seprate thread, handling bluetooth communications"""
         print("BT worker started")
         sendInterval = self.loopSpeed
@@ -176,7 +182,7 @@ class BTHandler:
 
     def _parseM(self, packet: str):
         with self.lock:
-            self._toController["message"] = packet[1:-1]
+            self._toController["message"] += packet[1:-1]
 
     def _connect(self):
         """Opens BT Serial Connection\n

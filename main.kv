@@ -20,7 +20,7 @@
     font_color_normal: 'black'
     line_color: app.theme_cls.primary_color
     group: 'step'
-    size_hint: .25,1
+    size_hint: .25, 1
     rounded_button: True
     text: ""    
 
@@ -82,6 +82,7 @@
     btStatus: btStatus
     step: 1
     pidLockOut: True
+    consoleText: '\n'*15
 
     MDAnchorLayout: #PID/Trim controls
         size: root.size
@@ -90,7 +91,7 @@
         padding: '20dp'
         MDBoxLayout:
             orientation: 'vertical'
-            size_hint: None, 1
+            size_hint: .3 , 1
             width: '350dp'
             # adaptive_height: True
             MDBoxLayout:
@@ -165,9 +166,8 @@
         size: root.size
         anchor_x: 'right'
         anchor_y: 'top'
-        padding: '25dp'
-        spacing: '10dp'
         MDBoxLayout:
+            padding: '25dp'
             spacing: '10dp'
             orientation: 'vertical'
             adaptive_size: True
@@ -206,14 +206,60 @@
                     size: dp(20), dp(20)
                     color: 'lightslategray'
 
-    AnchorLayout: #Speed Slider
+    AnchorLayout: #slider and graphs
         size: root.size
         anchor_x: 'left'
-        anchor_y: 'bottom'
-        padding: '150dp', '100dp'
+        anchor_y: 'top'
         MDBoxLayout:
-            adaptive_size: True
             orientation: 'horizontal'
-            spacing: .07*self.width
+            size_hint: .7, 1
+            padding: dp(50), dp(10)
+            # md_bg_color: app.theme_cls.accent_dark
             SprungSlider:
                 id: speedObj
+                adaptive_width: True
+                pos_hint: {'center_y': .4}
+            MDStackLayout:
+                orientation: 'tb-lr'
+                padding: dp(10), dp(20)
+                spacing: dp(10)
+                MDRelativeLayout:
+                    size_hint: .5, 1/3
+                    pos_hint: {'center_y': 0}
+                    TextInput:
+                        foreground_color: 'black'
+                        background_color: 'lightgrey'
+                        halign: 'left'
+                        valign: 'bottom'
+                        padding_x: dp(10)
+                        mode: 'fill'
+                        multiline: True
+                        readonly: True
+                        scroll_from_swipe: True
+                        font_size: 17
+                        text: root.consoleText
+                    MDLabel:
+                        adaptive_size: True
+                        pos: self.parent.width-self.width - dp(10), self.parent.height - self.height -dp(10)
+                        text: "Console Messages:"
+                        color: "black"
+                MDLabel:
+                    text:"graph 1"
+                    size_hint: .5, 1/3
+                    md_bg_color: app.theme_cls.primary_color                    
+                MDLabel:
+                    text:"graph 2"
+                    size_hint: .5, 1/3
+                    md_bg_color: app.theme_cls.primary_light                    
+                MDLabel:
+                    text:"graph 3"
+                    size_hint: .5, 1/3
+                    md_bg_color: app.theme_cls.primary_dark                    
+                MDLabel:
+                    text:"graph 4"
+                    size_hint: .5, 1/3
+                    md_bg_color: app.theme_cls.primary_color                    
+                MDLabel:
+                    text:"graph 5"
+                    size_hint: .5, 1/3
+                    md_bg_color: app.theme_cls.primary_light                    
