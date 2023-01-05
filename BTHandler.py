@@ -86,22 +86,18 @@ class BTHandler:
             with self.lock:
                 status = (self._requestConnect,
                           self._connected, self._requestExit)
-
-            # if connect requested
             if status[0] and not status[1]:
                 self._connect()
                 continue
-            # if disconnect requested
             elif status[1] and (status[2] or not status[0]):
                 self._disconnect()
                 continue
-
-            # if exit requested
             if status[2]:
                 break
             if status[1]:  # if connected
                 self._parseBtData()
                 self._sendBTData()
+
             # wait for time before looping
             sleeptime = nextSendTime-time()
             if (sleeptime > 0):
@@ -128,6 +124,7 @@ class BTHandler:
         while endInd != -1:
             packet = data[0:endInd+1]
             data = data[endInd+1:]
+            print("Rx: ", packet)
             parseSwitch = {
                 "U": self._parseU,
                 "P": self._parseP,
@@ -144,7 +141,7 @@ class BTHandler:
             self._toController["voltage"] = float(tokens[0])
             self._toController["setAngle"] = float(tokens[1])
             self._toController["actualAngle"] = float(tokens[2])
-            # self._toController["isEnabled"] = bool(tokens[3])
+            self._toController["isEnabled"] = bool(tokens[3])
 
     def _parseP(self, packet: str):
         packet = packet[1:-1]
@@ -162,10 +159,12 @@ class BTHandler:
         with self.lock:
             sData = self._fromController.copy()
 
-        updateStr = "U{},{},{},{}/".format(
-            sData['speed'], sData['turn'], sData['trim'], 1 if sData['enable'] else 0)
+        # updateStr = "U{},{},{:.2f},{}/".format(
+        #     int(10.0), int(3.1), sData['trim'], 1 if sData['enable'] else 0)
+        updateStr = "U{},{},{:.2f},{}/".format(
+            int(sData['speed']), int(sData['turn']), sData['trim'], 1 if sData['enable'] else 0)
         self.bt.write(updateStr.encode('utf-8'))
-
+        # print("Tx: ", updateStr)
         if sData['sendPID']:
             pidStr = "P{},{},{}/".format(sData['p'], sData['i'], sData['d'])
             self.bt.write(pidStr.encode('utf-8'))
