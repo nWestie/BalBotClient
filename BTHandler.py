@@ -13,7 +13,6 @@ class BTHandler:
         self._requestConnect = False
         self._connected = False
         self._connectionStatus = ''
-        self._updatePIDFromBot = False
         self._requestExit = False
         self._toController = {
             'voltage': 0,
@@ -22,8 +21,9 @@ class BTHandler:
             'p': -1,
             'i': -1,
             'd': -1,
-            'message': '',
+            'PIDenable': False,
             'isEnabled': False,
+            'message': ''
         }
         self._fromController = {
             'speed': 0,
@@ -44,13 +44,18 @@ class BTHandler:
         self.workerThread = Thread(target=self.btWorker)
         self.workerThread.start()
 
-    def get(self, *args):
+    def getMany(self, *args):
         retVals = {}
         with self.lock:
             for key in args:
                 if key in self._toController.keys():
                     retVals[key] = self._toController[key]
         return retVals
+
+    def get(self, arg):
+        with self.lock:
+            if arg in self._toController.keys():
+                return self._toController[arg]
 
     def set(self, **kwargs):
         with self.lock:
@@ -67,10 +72,6 @@ class BTHandler:
             status = self._connectionStatus
             self._connectionStatus = ''
             return status
-
-    def updatePIDFromBot(self):
-        with self.lock:
-            return self._updatePIDFromBot
 
     def exit(self):
         with self.lock:
@@ -105,6 +106,27 @@ class BTHandler:
             nextSendTime = time()+sendInterval
         print("bt worker closing")
 
+    def _sendBTData(self):
+        with self.lock:
+            sData = self._fromController.copy()
+            reqPID = not self._toController['PIDenable']
+        updateStr = "U{},{},{:.2f},{}/".format(
+            int(sData['speed']), int(sData['turn']), sData['trim'], 1 if sData['enable'] else 0)
+        self.bt.write(updateStr.encode('ascii'))
+        # print("Tx: ", updateStr)
+        if reqPID:
+            self.bt.write("R/".encode('ascii'))
+        elif sData['sendPID']:
+            pidStr = "P{},{},{}/".format(sData['p'], sData['i'], sData['d'])
+            self.bt.write(pidStr.encode('ascii'))
+            with self.lock:
+                self._fromController['sendPID'] = False
+
+        if sData['savePID']:
+            self.bt.write("S/".encode('ascii'))
+            with self.lock:
+                self._fromController['savePID'] = False
+
     def _parseBtData(self):
         # Read BT Data
         numBytes = self.bt.in_waiting
@@ -124,13 +146,13 @@ class BTHandler:
         while endInd != -1:
             packet = data[0:endInd+1]
             data = data[endInd+1:]
-            print("Rx: ", packet)
+            # print("Rx: ", packet)
             parseSwitch = {
                 "U": self._parseU,
                 "P": self._parseP,
                 "M": self._parseM
             }
-            parseSwitch.get(packet[0], lambda __: None)(packet)
+            parseSwitch.get(packet[0], lambda __: print('badpacket'))(packet)
             endInd = data.find("/")
         self._btRecieveStr = data
 
@@ -147,6 +169,7 @@ class BTHandler:
         packet = packet[1:-1]
         tokens = packet.split(",")
         with self.lock:
+            self._toController['PIDenable'] = True
             self._toController["p"] = float(tokens[0])
             self._toController["i"] = float(tokens[1])
             self._toController["d"] = float(tokens[2])
@@ -154,27 +177,6 @@ class BTHandler:
     def _parseM(self, packet: str):
         with self.lock:
             self._toController["message"] = packet[1:-1]
-
-    def _sendBTData(self):
-        with self.lock:
-            sData = self._fromController.copy()
-
-        # updateStr = "U{},{},{:.2f},{}/".format(
-        #     int(10.0), int(3.1), sData['trim'], 1 if sData['enable'] else 0)
-        updateStr = "U{},{},{:.2f},{}/".format(
-            int(sData['speed']), int(sData['turn']), sData['trim'], 1 if sData['enable'] else 0)
-        self.bt.write(updateStr.encode('utf-8'))
-        # print("Tx: ", updateStr)
-        if sData['sendPID']:
-            pidStr = "P{},{},{}/".format(sData['p'], sData['i'], sData['d'])
-            self.bt.write(pidStr.encode('utf-8'))
-            with self.lock:
-                self._fromController['sendPID'] = False
-
-        if sData['savePID']:
-            self.bt.write("S/".encode('utf-8'))
-            with self.lock:
-                self._fromController['savePID'] = False
 
     def _connect(self):
         """Opens BT Serial Connection\n
@@ -205,6 +207,7 @@ class BTHandler:
                 self._connected = False
                 self._requestConnect = False
                 self._connectionStatus = "Disconnected"
+                self._toController['PIDenable'] = False
         except:
             print("Error Closing BT connection")
             with self.lock:

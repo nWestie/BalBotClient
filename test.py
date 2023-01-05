@@ -17,8 +17,11 @@ def getData(*args):
     retVals = {}
     for key in args:
         if key in data.keys():
+            if len(args) == 1:
+                return data[key]
             retVals[key] = data[key]
     return retVals
 
-# modData(p=12,i=10,d=1)
-# print(data)
+modData(p=12,i=10,d=1)
+vals = getData("p", 'i')
+print(vals)

@@ -5,7 +5,7 @@ from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.widget import MDWidget
 from kivymd.uix.button import MDRectangleFlatButton
 from kivymd.uix.behaviors.toggle_behavior import MDToggleButton
-from kivy.properties import ObjectProperty, NumericProperty
+from kivy.properties import ObjectProperty, NumericProperty, BooleanProperty
 from kivymd.uix.slider import MDSlider
 import BTHandler
 
@@ -30,13 +30,14 @@ class ControllerMain(MDWidget):
     enableObj = ObjectProperty(None)
     connectBtn = ObjectProperty(None)
     btStatus = ObjectProperty(None)
+    pidLockOut = BooleanProperty(None)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.btHandler = BTHandler.BTHandler("COM8", 1/20)
-        Clock.schedule_interval(self.regularBT, 1/22)
+        Clock.schedule_interval(self.regularBTUpdate, 1/22)
 
-    def regularBT(self, dt):
+    def regularBTUpdate(self, _):
         if (self.btStatus.working):
             status = self.btHandler.connectionStatus()
             if (status):
@@ -49,9 +50,22 @@ class ControllerMain(MDWidget):
                 else:
                     self.connectBtn.text = 'Disconnect' if self.connectBtn.state == 'down' else 'Connect'
                     self.connectBtn.disabled = False
+        if self.pidLockOut and self.btHandler.get("PIDenable"):
+            pidVals = self.btHandler.getMany('p', 'i', 'd')
+            self.pObj.value = pidVals['p']
+            self.iObj.value = pidVals['i']
+            self.dObj.value = pidVals['d']
+            self.pidLockOut = False
+            print('PID enabled')
+        elif not self.btHandler.get('PIDenable'):
+            self.pidLockOut = True
         enabled = True if self.enableObj.state == 'down' else False
         self.btHandler.set(speed=self.speedObj.value,
                            trim=self.trimObj.value, enable=enabled)
+        # get a bunch of things
+
+    def onGoodPID(self):
+        pass
 
     def sendPID(self):
         self.btHandler.set(p=self.pObj.value,
@@ -62,7 +76,7 @@ class ControllerMain(MDWidget):
     def savePID(self):
         self.btHandler.set(p=self.pObj.value,
                            i=self.iObj.value, d=self.dObj.value)
-        self.btHandler.set(savePID=True)
+        self.btHandler.set(sendPID=True,savePID=True)
         print('savePID')
 
     def enablePressed(self, state):

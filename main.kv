@@ -81,6 +81,7 @@
     connectBtn: connectBtn
     btStatus: btStatus
     step: 1
+    pidLockOut: True
 
     MDAnchorLayout: #PID/Trim controls
         size: root.size
@@ -119,21 +120,28 @@
                 padding: '7dp','15dp'
                 height: "115dp"
                 step: root.step
+            # MDWidget:
+            #     size_hint: 1, None
+            #     height: dp(2)
+            #     md_bg_color: 'white'
             NumSpinner:
                 id: pObj
                 name: "kP"
                 value: 1.0
                 step: root.step
+                disabled: root.pidLockOut
             NumSpinner:
                 id: iObj
                 name: 'kI'
                 value: 2.0
                 step: root.step
+                disabled: root.pidLockOut
             NumSpinner:
                 id: dObj
                 name: 'kD'
                 value: 3.0
                 step: root.step
+                disabled: root.pidLockOut
             MDBoxLayout:
                 size_hint: .5, None
                 adaptive_width: True
@@ -143,13 +151,15 @@
                 spacing: '7dp'
                 padding: '7dp'
                 MDRaisedButton:
-                    size_hint: .5, 1
+                    size_hint: None, 1
                     text: 'SEND PID'
                     on_press: root.sendPID()
+                    disabled: root.pidLockOut
                 MDRaisedButton:
-                    size_hint: .5, 1
+                    size_hint: None, 1
                     text: 'SAVE PID'
                     on_press: root.savePID()
+                    disabled: root.pidLockOut
     
     AnchorLayout: #Top Right controls
         size: root.size
