@@ -21,7 +21,6 @@ class SprungSlider(MDSlider):
 class Toggle(MDRectangleFlatButton, MDToggleButton):
     pass
 
-
 class MainGraph(Graph, MDWidget):
     pass
 
@@ -62,42 +61,67 @@ class ControllerMain(MDWidget):
                 else:
                     self.connectBtn.text = 'Disconnect' if self.connectBtn.state == 'down' else 'Connect'
                     self.connectBtn.disabled = False
-        if (self.connectBtn.state != 'down'):  # if not connected, return
-            return
+        # # if not connected, return
+        # if (self.connectBtn.state != 'down'):  
+        #     return
 
-        if self.pidLockOut and self.btHandler.get("PIDenable"):
-            pidVals = self.btHandler.getMany('p', 'i', 'd')
-            self.pObj.value = pidVals['p']
-            self.iObj.value = pidVals['i']
-            self.dObj.value = pidVals['d']
-            self.pidLockOut = False
-            print('PID enabled')
-        elif not self.btHandler.get('PIDenable'):
-            self.pidLockOut = True
+        # if self.pidLockOut and self.btHandler.get("PIDenable"):
+        #     pidVals = self.btHandler.getMany('p', 'i', 'd')
+        #     self.pObj.value = pidVals['p']
+        #     self.iObj.value = pidVals['i']
+        #     self.dObj.value = pidVals['d']
+        #     self.pidLockOut = False
+        #     print('PID enabled')
+        # elif not self.btHandler.get('PIDenable'):
+        #     self.pidLockOut = True
 
-        enabled = True if self.enableObj.state == 'down' else False
-        self.btHandler.set(speed=self.speedObj.value,
-                           trim=self.trimObj.value, enable=enabled)
-        # get a bunch of things
-        botData = self.btHandler.getMany("messages", "voltage", 'logs')
-        # print messages to console
-        for message in botData['messages']:
-            self.consoleText += (message)
-        if self.consoleText.count('\n') > 10:
-            lines = self.consoleText.splitlines(True)[-10:]
-            self.consoleText = "".join(lines)
+        # enabled = True if self.enableObj.state == 'down' else False
+        # self.btHandler.set(speed=self.speedObj.value,
+        #                    trim=self.trimObj.value, enable=enabled)
+        # # get lists
+        # botData = self.btHandler.getMany("messages", 'logs')
+        # # print messages to console
+        # for message in botData['messages']:
+        #     self.consoleText += (message)
+        # if self.consoleText.count('\n') > 10:
+        #     lines = self.consoleText.splitlines(True)[-10:]
+        #     self.consoleText = "".join(lines)
+        # # add new data to graphs
+        # for packet in botData['logs']:
+        #     time = packet[0]/1000
+        #     self.voltLine.points.append(time,packet[1])
+        #     self.setDegLine.points.append(time,packet[2])
+        #     self.actDegLine.points.append(time,packet[3])
+        lx, ly = self.voltLine.points[-1]
+        self.voltLine.points.append((lx+20, ly+.001))
+        # Scroll Graphs if needed
+        if self.voltLine.points[-1][0] > self.voltGraph.xmax:
+            self.voltLine.points = self.voltLine.points[-301:]
+            self.setDegLine.points = self.setDegLine.points[-301:]
+            self.actDegLine.points = self.actDegLine.points[-301:]
+            min = self.voltLine.points[0][0] 
+            max = self.voltLine.points[-1][0]
+            self.voltGraph.xmin = min
+            self.voltGraph.xmax = max
+            self.mainGraph.xmin = min
+            self.mainGraph.xmax = max
+        # clear lists
+        self.btHandler.clearLists('messages', 'logs')
 
     def initGraphs(self):
         self.voltLine = MeshLinePlot(color=[1, 0, 0, 1])
-        self.voltLine.points = [(x, .05*x+10) for x in range(100)]
-        vGraph = VoltGraph()
-        vGraph.add_plot(self.voltLine)
-        self.graphStack.add_widget(vGraph)
+        self.voltLine.points = [(x, .01*x+10) for x in range(5)]
+        self.voltGraph = VoltGraph()
+        self.voltGraph.add_plot(self.voltLine)
+        self.graphStack.add_widget(self.voltGraph)
+        self.setDegLine = MeshLinePlot(color=[1, 1, 0, 1])
+        self.setDegLine.points = [(x, .02*x+70) for x in range(5)]
         self.actDegLine = MeshLinePlot(color=[1, 0, 0, 1])
-        self.actDegLine.points = [(x, .2*x+70) for x in range(100)]
-        mGraph = MainGraph()
-        mGraph.add_plot(self.actDegLine)
-        self.graphStack.add_widget(mGraph)
+        self.actDegLine.points = [(x, .07*x+70) for x in range(5)]
+        self.mainGraph = MainGraph()
+        self.mainGraph.add_plot(self.setDegLine)
+        self.mainGraph.add_plot(self.actDegLine)
+        self.graphStack.add_widget(self.mainGraph)
 
     def sendPID(self):
         self.btHandler.set(p=self.pObj.value,

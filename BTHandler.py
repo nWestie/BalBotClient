@@ -1,6 +1,8 @@
 import serial
 from time import time, sleep
 from threading import Thread, Lock
+from datetime import datetime
+from csv import writer
 
 
 class BTHandler:
@@ -14,8 +16,8 @@ class BTHandler:
         self._connected = False
         self._connectionStatus = ''
         self._requestExit = False
+        self._dataSave = None
         self._toController = {
-            'voltage': 0,
             'logs': [],
             'p': -1,
             'i': -1,
@@ -61,6 +63,7 @@ class BTHandler:
             for key, val in kwargs.items():
                 if key in self._fromController.keys():
                     self._fromController[key] = val
+
     def clearLists(self, *args):
         if len(args) == 0:
             args = ['messages', 'logs']
@@ -68,8 +71,9 @@ class BTHandler:
             for listName in args:
                 if listName in self._toController.keys():
                     self._toController[listName] = []
-        
+
     def requestConnect(self, disconnect=False):
+        """Notifies the worker thread to attempt to connect over bluetooth"""
         with self.lock:
             self._requestConnect = not disconnect
 
@@ -80,6 +84,7 @@ class BTHandler:
             return status
 
     def exit(self):
+        """Notifys the worker thread to exit, and blocks until the thread closes"""
         with self.lock:
             self._requestExit = True
         self.workerThread.join()
@@ -87,30 +92,36 @@ class BTHandler:
     def _btWorker(self):
         """Control loop that runs in a seprate thread, handling bluetooth communications"""
         print("BT worker started")
-        sendInterval = self.loopSpeed
-        nextSendTime = time()+sendInterval
-        while (True):
-            with self.lock:
-                status = (self._requestConnect,
-                          self._connected, self._requestExit)
-            if status[0] and not status[1]:
-                self._connect()
-                continue
-            elif status[1] and (status[2] or not status[0]):
-                self._disconnect()
-                continue
-            if status[2]:
-                break
-            if status[1]:  # if connected
-                self._parseBtData()
-                self._sendBTData()
-
-            # wait for time before looping
-            sleeptime = nextSendTime-time()
-            if (sleeptime > 0):
-                sleep(sleeptime)
+        fileName = datetime.now().strftime('%d-%m-%y_%H.%M.%S')
+        fileName = 'logData\\'+fileName+'.csv'
+        with open(fileName, 'w', newline='') as file:
+            self._dataSave = writer(file)
+            sendInterval = self.loopSpeed
             nextSendTime = time()+sendInterval
+            while (True):
+                with self.lock:
+                    status = (self._requestConnect,
+                              self._connected, self._requestExit)
+                if status[0] and not status[1]:
+                    self._connect()
+                    continue
+                elif status[1] and (status[2] or not status[0]):
+                    self._disconnect()
+                    continue
+                if status[2]:
+                    break
+                if status[1]:  # if connected
+                    self._recieveBtData()
+                    self._sendBTData()
+
+                # wait for time before looping
+                sleeptime = nextSendTime-time()
+                if (sleeptime > 0):  # sits here for 99.9% of time
+                    # print(sleeptime/sendInterval)
+                    sleep(sleeptime)
+                nextSendTime = time()+sendInterval
         print("bt worker closing")
+        print("Data Saved to \""+fileName+"\"")
 
     def _sendBTData(self):
         with self.lock:
@@ -133,7 +144,7 @@ class BTHandler:
             with self.lock:
                 self._fromController['savePID'] = False
 
-    def _parseBtData(self):
+    def _recieveBtData(self):
         # Read BT Data
         numBytes = self.bt.in_waiting
         if numBytes > 0:
@@ -162,14 +173,16 @@ class BTHandler:
             endInd = data.find("/")
         self._btRecieveStr = data
 
-    # def _parseU(self, packet: str):
-    #     packet = packet[1:-1]
-    #     tokens = packet.split(",")
-    #     with self.lock:
-    #         self._toController["voltage"] = float(tokens[0])
-    #         self._toController["setAngle"] = float(tokens[1])
-    #         self._toController["actualAngle"] = float(tokens[2])
-    #         self._toController["isEnabled"] = bool(tokens[3])
+    def _parseU(self, packet: str):
+        packet = packet[1:-1]
+        tokens = packet.split(",")
+        logPacket = [float(val) for val in tokens[0:3]]
+        print(logPacket)
+        if (self._dataSave):
+            self._dataSave.writerow(logPacket)
+        with self.lock:
+            self._toController["logs"].append(logPacket)
+            self._toController["isEnabled"] = bool(tokens[4])
 
     def _parseP(self, packet: str):
         packet = packet[1:-1]
@@ -182,7 +195,7 @@ class BTHandler:
 
     def _parseM(self, packet: str):
         with self.lock:
-            self._toController["message"] += packet[1:-1]
+            self._toController["message"].append(packet[1:-1])
 
     def _connect(self):
         """Opens BT Serial Connection\n

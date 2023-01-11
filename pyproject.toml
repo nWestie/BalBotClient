@@ -13,6 +13,7 @@ dependencies = [
     "kivymd>=1.1.1",
     "pyserial>=3.5",
     "kivy-garden.graph>=0.4.0",
+    "plyer>=2.1.0",
 ]
 requires-python = ">=3.10"
 license = {text = "MIT"}
