@@ -71,6 +71,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "kivy-garden.graph"
+version = "0.4.0"
+summary = "Display plots in kivy."
+
+[[package]]
 name = "kivymd"
 version = "1.1.1"
 requires_python = ">=3.7"
@@ -142,7 +147,7 @@ summary = "HTTP library with thread-safe connection pooling, file post, and more
 
 [metadata]
 lock_version = "4.1"
-content_hash = "sha256:40601f13afeb4556985f216b20dcb038c7d9d5ebf3c94daa4920ed7e84f64415"
+content_hash = "sha256:cc96deb52b5f1fb5ba8ed5eb97ade37eec0758c2d16adcd849f4e2ae1dc92f00"
 
 [metadata.files]
 "autopep8 2.0.1" = [
@@ -224,6 +229,10 @@ content_hash = "sha256:40601f13afeb4556985f216b20dcb038c7d9d5ebf3c94daa4920ed7e8
 ]
 "kivy-garden 0.1.5" = [
     {url = "https://files.pythonhosted.org/packages/6a/55/cd1555bde62f809219cbc5d8a0836b0293399da2f4ba4e8ee84b6a7cc393/Kivy_Garden-0.1.5-py3-none-any.whl", hash = "sha256:ef50f44b96358cf10ac5665f27a4751bb34ef54051c54b93af891f80afe42929"},
+]
+"kivy-garden.graph 0.4.0" = [
+    {url = "https://files.pythonhosted.org/packages/55/96/d3a37741d4d0b235f150d1fa9c0d02100a8ccbe2bfbb260282735a06aec8/kivy_garden.graph-0.4.0-py2.py3-none-any.whl", hash = "sha256:30cd05e6de5fb85e68a2e2d2215ae2a7989bf03a5dc45d45256a78a3cbed44eb"},
+    {url = "https://files.pythonhosted.org/packages/79/20/15f5a3e9f6a19168719433e8929f66f28dc534e30da35cdb447b2032e849/kivy_garden.graph-0.4.0.tar.gz", hash = "sha256:4150f454b91dc025c37e69f81d7c1cb521e9164bd8e7db44b1855bf3d715264c"},
 ]
 "kivymd 1.1.1" = [
     {url = "https://files.pythonhosted.org/packages/35/55/d979644cdc9070a9611ab023db986aa0d540fc8f5fdd2c0f49eaef558751/kivymd-1.1.1.tar.gz", hash = "sha256:931a0435c2a079c6dca755c50d0023b5e1c907f7b4ac8bb9e2834daa3cefe906"},

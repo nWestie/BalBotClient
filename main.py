@@ -7,6 +7,7 @@ from kivymd.uix.button import MDRectangleFlatButton
 from kivymd.uix.behaviors.toggle_behavior import MDToggleButton
 from kivy.properties import ObjectProperty, NumericProperty, BooleanProperty, StringProperty
 from kivymd.uix.slider import MDSlider
+from kivy_garden.graph import Graph, MeshLinePlot
 import BTHandler
 
 
@@ -21,6 +22,14 @@ class Toggle(MDRectangleFlatButton, MDToggleButton):
     pass
 
 
+class MainGraph(Graph, MDWidget):
+    pass
+
+
+class VoltGraph(Graph, MDWidget):
+    pass
+
+
 class ControllerMain(MDWidget):
     pObj = ObjectProperty(None)
     iObj = ObjectProperty(None)
@@ -30,6 +39,7 @@ class ControllerMain(MDWidget):
     enableObj = ObjectProperty(None)
     connectBtn = ObjectProperty(None)
     btStatus = ObjectProperty(None)
+    graphStack = ObjectProperty(None)
     pidLockOut = BooleanProperty(None)
     consoleText = StringProperty(None)
 
@@ -37,6 +47,7 @@ class ControllerMain(MDWidget):
         super().__init__(*args, **kwargs)
         self.btHandler = BTHandler.BTHandler("COM8", 1/20)
         Clock.schedule_interval(self.regularBTUpdate, 1/22)
+        self.initGraphs()
 
     def regularBTUpdate(self, _):
         if (self.btStatus.working):
@@ -51,7 +62,7 @@ class ControllerMain(MDWidget):
                 else:
                     self.connectBtn.text = 'Disconnect' if self.connectBtn.state == 'down' else 'Connect'
                     self.connectBtn.disabled = False
-        if(self.connectBtn.state != 'down'): #if not connected, return
+        if (self.connectBtn.state != 'down'):  # if not connected, return
             return
 
         if self.pidLockOut and self.btHandler.get("PIDenable"):
@@ -63,7 +74,7 @@ class ControllerMain(MDWidget):
             print('PID enabled')
         elif not self.btHandler.get('PIDenable'):
             self.pidLockOut = True
-       
+
         enabled = True if self.enableObj.state == 'down' else False
         self.btHandler.set(speed=self.speedObj.value,
                            trim=self.trimObj.value, enable=enabled)
@@ -72,12 +83,21 @@ class ControllerMain(MDWidget):
         # print messages to console
         for message in botData['messages']:
             self.consoleText += (message)
-        if self.consoleText.count('\n') > 10: 
+        if self.consoleText.count('\n') > 10:
             lines = self.consoleText.splitlines(True)[-10:]
             self.consoleText = "".join(lines)
 
-    def onGoodPID(self):
-        pass
+    def initGraphs(self):
+        self.voltLine = MeshLinePlot(color=[1, 0, 0, 1])
+        self.voltLine.points = [(x, .05*x+10) for x in range(100)]
+        vGraph = VoltGraph()
+        vGraph.add_plot(self.voltLine)
+        self.graphStack.add_widget(vGraph)
+        self.actDegLine = MeshLinePlot(color=[1, 0, 0, 1])
+        self.actDegLine.points = [(x, .2*x+70) for x in range(100)]
+        mGraph = MainGraph()
+        mGraph.add_plot(self.actDegLine)
+        self.graphStack.add_widget(mGraph)
 
     def sendPID(self):
         self.btHandler.set(p=self.pObj.value,

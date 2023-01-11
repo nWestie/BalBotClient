@@ -162,14 +162,14 @@ class BTHandler:
             endInd = data.find("/")
         self._btRecieveStr = data
 
-    def _parseU(self, packet: str):
-        packet = packet[1:-1]
-        tokens = packet.split(",")
-        with self.lock:
-            self._toController["voltage"] = float(tokens[0])
-            self._toController["setAngle"] = float(tokens[1])
-            self._toController["actualAngle"] = float(tokens[2])
-            self._toController["isEnabled"] = bool(tokens[3])
+    # def _parseU(self, packet: str):
+    #     packet = packet[1:-1]
+    #     tokens = packet.split(",")
+    #     with self.lock:
+    #         self._toController["voltage"] = float(tokens[0])
+    #         self._toController["setAngle"] = float(tokens[1])
+    #         self._toController["actualAngle"] = float(tokens[2])
+    #         self._toController["isEnabled"] = bool(tokens[3])
 
     def _parseP(self, packet: str):
         packet = packet[1:-1]

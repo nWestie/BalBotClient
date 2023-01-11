@@ -1,4 +1,29 @@
 
+<MainGraph, VoltGraph>:
+    md_bg_color: [0,.18,.16,1]
+    tick_color: [.75,.75,.75,1]
+    radius: dp(10)
+    padding: dp(10)
+    xmin: -0
+    xmax: 100
+    x_ticks_major: 101
+    y_ticks_major: 5
+    y_grid_label: True
+    x_grid_label: True
+    y_grid: True
+<MainGraph>:
+    size_hint: 1, 2/3
+    ymin: 70
+    ymax: 110
+    ylabel: 'Degrees'
+<VoltGraph>:
+    size_hint: .5, 1/3
+    ylabel: 'Voltage'
+    ymin: 10
+    ymax: 15
+    y_ticks_major: 1
+    y_grid: True
+
 <Toggle>:
     line_width: '2dp'
 
@@ -25,7 +50,7 @@
     text: ""    
 
 
-<NumSpinner@MDBoxLayout>
+<NumSpinner>
     name: ""
     value: 10.0
     min: 0
@@ -46,8 +71,8 @@
         size_hint: None, None
         halign: 'center'
         pos_hint: {'center_y': .5}
-        padding_y: '7dp'
-        height: self.line_height+sum(self.padding_y)
+        padding: dp(5), dp(7)
+        height: self.line_height+dp(14)
 
         font_size: 20
         multiline: False
@@ -80,6 +105,7 @@
     enableObj: enableObj
     connectBtn: connectBtn
     btStatus: btStatus
+    graphStack: graphStack
     step: 1
     pidLockOut: True
     consoleText: '\n'*15
@@ -220,7 +246,8 @@
                 adaptive_width: True
                 pos_hint: {'center_y': .4}
             MDStackLayout:
-                orientation: 'tb-lr'
+                id: graphStack
+                orientation: 'lr-tb'
                 padding: dp(10), dp(20)
                 spacing: dp(10)
                 MDRelativeLayout:
@@ -231,7 +258,6 @@
                         background_color: 'lightgrey'
                         halign: 'left'
                         valign: 'bottom'
-                        padding_x: dp(10)
                         mode: 'fill'
                         multiline: True
                         readonly: True
@@ -239,27 +265,10 @@
                         font_size: 17
                         text: root.consoleText
                     MDLabel:
-                        adaptive_size: True
-                        pos: self.parent.width-self.width - dp(10), self.parent.height - self.height -dp(10)
-                        text: "Console Messages:"
+                        padding: dp(5), dp(5)
+                        md_bg_color: 'grey'
+                        size_hint: 1, None
+                        adaptive_height: True
+                        pos: 0, self.parent.height - self.height
+                        text: "Console: "
                         color: "black"
-                MDLabel:
-                    text:"graph 1"
-                    size_hint: .5, 1/3
-                    md_bg_color: app.theme_cls.primary_color                    
-                MDLabel:
-                    text:"graph 2"
-                    size_hint: .5, 1/3
-                    md_bg_color: app.theme_cls.primary_light                    
-                MDLabel:
-                    text:"graph 3"
-                    size_hint: .5, 1/3
-                    md_bg_color: app.theme_cls.primary_dark                    
-                MDLabel:
-                    text:"graph 4"
-                    size_hint: .5, 1/3
-                    md_bg_color: app.theme_cls.primary_color                    
-                MDLabel:
-                    text:"graph 5"
-                    size_hint: .5, 1/3
-                    md_bg_color: app.theme_cls.primary_light                    
