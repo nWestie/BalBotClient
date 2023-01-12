@@ -21,6 +21,7 @@ class SprungSlider(MDSlider):
 class Toggle(MDRectangleFlatButton, MDToggleButton):
     pass
 
+
 class MainGraph(Graph, MDWidget):
     pass
 
@@ -54,70 +55,71 @@ class ControllerMain(MDWidget):
             if (status):
                 self.btStatus.working = False
                 self.btStatus.text = status
-                if status.lower().find("error") != -1:
+                if status.lower().find("error") != -1: #error connecting/disconnecting
                     self.connectBtn.disabled = False
                     self.connectBtn.text = 'Connect'
                     self.connectBtn.state = 'normal'
                 else:
                     self.connectBtn.text = 'Disconnect' if self.connectBtn.state == 'down' else 'Connect'
                     self.connectBtn.disabled = False
-        # # if not connected, return
-        # if (self.connectBtn.state != 'down'):  
-        #     return
+                    self.voltLine.points = []
+                    self.actDegLine.points = []
+                    self.setDegLine.points = []
+        # if not connected, return
+        if (self.connectBtn.state != 'down'):
+            return
 
-        # if self.pidLockOut and self.btHandler.get("PIDenable"):
-        #     pidVals = self.btHandler.getMany('p', 'i', 'd')
-        #     self.pObj.value = pidVals['p']
-        #     self.iObj.value = pidVals['i']
-        #     self.dObj.value = pidVals['d']
-        #     self.pidLockOut = False
-        #     print('PID enabled')
-        # elif not self.btHandler.get('PIDenable'):
-        #     self.pidLockOut = True
+        if self.pidLockOut and self.btHandler.get("PIDenable"):
+            pidVals = self.btHandler.getMany('p', 'i', 'd')
+            self.pObj.value = pidVals['p']
+            self.iObj.value = pidVals['i']
+            self.dObj.value = pidVals['d']
+            self.pidLockOut = False
+            print('PID enabled')
+        elif not self.btHandler.get('PIDenable'):
+            self.pidLockOut = True
 
-        # enabled = True if self.enableObj.state == 'down' else False
-        # self.btHandler.set(speed=self.speedObj.value,
-        #                    trim=self.trimObj.value, enable=enabled)
-        # # get lists
-        # botData = self.btHandler.getMany("messages", 'logs')
-        # # print messages to console
-        # for message in botData['messages']:
-        #     self.consoleText += (message)
-        # if self.consoleText.count('\n') > 10:
-        #     lines = self.consoleText.splitlines(True)[-10:]
-        #     self.consoleText = "".join(lines)
-        # # add new data to graphs
-        # for packet in botData['logs']:
-        #     time = packet[0]/1000
-        #     self.voltLine.points.append(time,packet[1])
-        #     self.setDegLine.points.append(time,packet[2])
-        #     self.actDegLine.points.append(time,packet[3])
-        lx, ly = self.voltLine.points[-1]
-        self.voltLine.points.append((lx+20, ly+.001))
+        enabled = True if self.enableObj.state == 'down' else False
+        self.btHandler.set(speed=self.speedObj.value,
+                           trim=self.trimObj.value, enable=enabled)
+        # get lists
+        botData = self.btHandler.getMany("messages", 'logs')
+        self.btHandler.clearLists('messages', 'logs')
+        # print messages to console
+        for message in botData['messages']:
+            self.consoleText += (message)
+        if self.consoleText.count('\n') > 10:
+            lines = self.consoleText.splitlines(True)[-10:]
+            self.consoleText = "".join(lines)
+        # add new data to graphs
+        if not botData['logs']:
+            return
+        for packet in botData['logs']:
+            self.voltLine.points.append((packet[0], packet[1]))
+            self.setDegLine.points.append((packet[0], packet[2]))
+            self.actDegLine.points.append((packet[0], packet[3]))
         # Scroll Graphs if needed
         if self.voltLine.points[-1][0] > self.voltGraph.xmax:
             self.voltLine.points = self.voltLine.points[-301:]
             self.setDegLine.points = self.setDegLine.points[-301:]
             self.actDegLine.points = self.actDegLine.points[-301:]
-            min = self.voltLine.points[0][0] 
             max = self.voltLine.points[-1][0]
+            min = max - 15
             self.voltGraph.xmin = min
             self.voltGraph.xmax = max
             self.mainGraph.xmin = min
             self.mainGraph.xmax = max
-        # clear lists
-        self.btHandler.clearLists('messages', 'logs')
 
     def initGraphs(self):
         self.voltLine = MeshLinePlot(color=[1, 0, 0, 1])
-        self.voltLine.points = [(x, .01*x+10) for x in range(5)]
+        # self.voltLine.points = [(x/20, .1) for x in range(300)]
         self.voltGraph = VoltGraph()
         self.voltGraph.add_plot(self.voltLine)
         self.graphStack.add_widget(self.voltGraph)
         self.setDegLine = MeshLinePlot(color=[1, 1, 0, 1])
-        self.setDegLine.points = [(x, .02*x+70) for x in range(5)]
+        # self.setDegLine.points = [(x/20, 90) for x in range(300)]
         self.actDegLine = MeshLinePlot(color=[1, 0, 0, 1])
-        self.actDegLine.points = [(x, .07*x+70) for x in range(5)]
+        # self.actDegLine.points = [(x/20, 0) for x in range(300)]
         self.mainGraph = MainGraph()
         self.mainGraph.add_plot(self.setDegLine)
         self.mainGraph.add_plot(self.actDegLine)
@@ -127,26 +129,21 @@ class ControllerMain(MDWidget):
         self.btHandler.set(p=self.pObj.value,
                            i=self.iObj.value, d=self.dObj.value)
         self.btHandler.set(sendPID=True)
-        print('sendPID')
 
     def savePID(self):
         self.btHandler.set(p=self.pObj.value,
                            i=self.iObj.value, d=self.dObj.value)
         self.btHandler.set(sendPID=True, savePID=True)
-        print('savePID')
 
     def enablePressed(self, state):
         val = True if state == 'down' else False
         self.btHandler.set(enable=val)
         self.consoleText += "yeet{}\n".format(self.consoleText.count('\n'))
 
-        print('enable')  # 'normal' or 'down'
-
     def stepPressed(self, buttonText: str):
         self.step = float(buttonText)
 
     def connectPressed(self, state):
-        print(state)
         self.connectBtn.disabled = True
         self.btStatus.working = True
         if (state == 'down'):
