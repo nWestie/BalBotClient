@@ -25,15 +25,17 @@
     y_ticks_major: 5
     y_grid: True
 
+
 <Toggle>:
     line_width: '2dp'
+
 
 <SprungSlider>:
     orientation:'vertical'
     size_hint: None, None
     size: '80dp', '500dp'
     
-    range: -100, 100
+    range: -128, 127
     value: 0
     on_active: self.sliderReleased()
 
@@ -108,7 +110,8 @@
     btStatus: btStatus
     graphStack: graphStack
     step: 1
-    pidLockOut: True
+    pidLockout: True
+    connectLockout: True
     consoleText: '\n'*15
 
     MDAnchorLayout: #PID/Trim controls
@@ -116,6 +119,7 @@
         anchor_x: 'right'
         anchor_y: 'bottom'
         padding: '20dp'
+        disabled: root.connectLockout
         MDBoxLayout:
             orientation: 'vertical'
             size_hint: .3 , 1
@@ -157,19 +161,19 @@
                 name: "kP"
                 value: 1.0
                 step: root.step
-                disabled: root.pidLockOut
+                disabled: root.pidLockout
             NumSpinner:
                 id: iObj
                 name: 'kI'
                 value: 2.0
                 step: root.step
-                disabled: root.pidLockOut
+                disabled: root.pidLockout
             NumSpinner:
                 id: dObj
                 name: 'kD'
                 value: 3.0
                 step: root.step
-                disabled: root.pidLockOut
+                disabled: root.pidLockout
             MDBoxLayout:
                 size_hint: .5, None
                 adaptive_width: True
@@ -182,12 +186,12 @@
                     size_hint: None, 1
                     text: 'SEND PID'
                     on_press: root.sendPID()
-                    disabled: root.pidLockOut
+                    disabled: root.pidLockout
                 MDRaisedButton:
                     size_hint: None, 1
                     text: 'SAVE PID'
                     on_press: root.savePID()
-                    disabled: root.pidLockOut
+                    disabled: root.pidLockout
     
     AnchorLayout: #Top Right controls
         size: root.size
@@ -200,16 +204,26 @@
             adaptive_size: True
             Toggle:
                 id: enableObj
-                text: 'ENABLE'
+                text: 'ENABLE' if self.state == 'normal' else 'DISABLE'
                 font_size: 70
-                on_state: root.enablePressed(self.state)
-            Toggle:
-                id: connectBtn
-                pos_hint: {'right':1}
-                text: 'Connect'
-                font_size: 30
-                line_width: '2dp'
-                on_release: root.connectPressed(self.state)
+                disabled: root.connectLockout
+                on_press: root.enablePressed(self.state)
+            MDBoxLayout:
+                orientation: 'horizontal'
+                adaptive_height: True
+                spacing: dp(15)
+                MDLabel:
+                    valign: 'center'
+                    halign: 'right'
+                    font_size: '20dp'
+                    text: root.voltageText
+                Toggle:
+                    id: connectBtn
+                    pos_hint: {'right':1}
+                    text: 'Connect'
+                    font_size: 30
+                    line_width: '2dp'
+                    on_press: root.connectPressed(self.state)
             MDBoxLayout:
                 id: btStatus
                 adaptive_height: True
@@ -241,7 +255,7 @@
             orientation: 'horizontal'
             size_hint: .7, 1
             padding: dp(50), dp(10)
-            # md_bg_color: app.theme_cls.accent_dark
+            disabled: root.connectLockout
             SprungSlider:
                 id: speedObj
                 adaptive_width: True
