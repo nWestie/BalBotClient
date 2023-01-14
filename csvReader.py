@@ -1,16 +1,22 @@
-from csv import reader
 from plyer import filechooser
+import numpy as np
+from matplotlib import pyplot as plt
 
-fileName = filechooser.open_file(
-    path='logData',
-    multiple=False,
-    preview=False,
-    filters=['*.csv']
+plt.style.use('dark_background')
+
+fileName = ''#C:/Users/WESTNB21/Documents/Code/BalBotClient/logData/01-13-23/19.18.02-data.csv"
+
+if not fileName:
+    fileName = filechooser.open_file(
+        path='logData',
+        multiple=False,
+        preview=False,
+        filters=['*.csv']
     )[0]
 print('Opened: ')
-print(fileName,'\n')
-with open(fileName, 'r') as file:
-    inp = reader(file)
-    for line in inp:
-        nums = [float(num) for num in line]
-        print(nums)
+print(fileName, '\n')
+
+b = np.loadtxt(fileName, dtype=np.float32, delimiter=',', usecols=(0,2,3))
+plt.plot(b[:,0],b[:,1])
+plt.plot(b[:,0],b[:,2])
+plt.show()
