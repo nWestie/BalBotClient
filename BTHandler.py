@@ -6,7 +6,8 @@ from csv import writer
 from os.path import isdir
 from os import makedirs
 
-
+ENABLECODE = 213
+DISABLECODE = 226
 class BTHandler:
     """Controls all communication between GUI and Robot\n
     The interface must provide/request the data it needs using set() and get() methods"""
@@ -161,7 +162,7 @@ class BTHandler:
         with self._lock:
             sData = self._fromController.copy()
             reqPID = not self._toController['PIDenable']
-            sendEnable = 1 if self._enable else 0
+            sendEnable = ENABLECODE if self._enable else DISABLECODE
         updateStr = "U{},{},{:.2f},{}/".format(
             int(sData['speed']), int(sData['turn']), sData['trim'], sendEnable)
         self.bt.write(updateStr.encode('ascii'))
