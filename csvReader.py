@@ -4,15 +4,15 @@ from matplotlib import pyplot as plt
 
 # plt.style.use('dark_background')
 
-# fileName = ''
-fileName = "C:/Users/WESTNB21/Documents/Code/BalBotClient/logData/01-13-23/19.18.02-data.csv"
+fileName = ''
+# fileName = "C:/Users/WESTNB21/Documents/Code/BalBotClient/logData/01-13-23/19.18.02-data.csv"
 
 if not fileName:
     fileName = filechooser.open_file(
         path='logData',
         multiple=False,
         preview=False,
-        filters=['*.csv']
+        filters=['*data.csv']
     )[0]
 print('Opened: ')
 print(fileName, '\n')

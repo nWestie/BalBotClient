@@ -3,5 +3,7 @@ def tst(l):
         print(i)
     else:
         print("finished")
-tst([1,2,3])
+
+
+tst([1, 2, 3])
 tst([])
