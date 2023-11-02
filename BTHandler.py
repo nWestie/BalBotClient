@@ -43,7 +43,7 @@ class BTHandler:
         # Lock not needed for vars below, only used by worker thread
         self._port = port
         self._lastPacketTime = time()
-        self._btRecieveStr = ""
+        self._btReceiveStr = ""
         # Start handler Thread
         self._loopSpeed = loopSpeed
         self._workerThread = Thread(target=self._btWorker)
@@ -86,7 +86,7 @@ class BTHandler:
             self._pendingEnable = True
 
     def requestConnect(self, disconnect=False):
-        """Notifies the worker thread to attempt to connect over bluetooth"""
+        """Notifies the worker thread to attempt to connect/disconnect bluetooth"""
         with self._lock:
             self._requestConnect = not disconnect
 
@@ -127,7 +127,7 @@ class BTHandler:
                     self._pidFile = open(
                         folderName+'\\'+timeStr+'-pid.csv', 'w', newline='')
                     self._dataWriter = writer(self._datFile)
-                    self._pidWriter = writer(self._pidFile)
+                    self._pidWriter = writer(self._pidFile) #TODO: pid save doesn't seem to be working?
                 continue
             elif status[1] and (status[2] or not status[0]):
                 self._disconnect()
@@ -183,10 +183,10 @@ class BTHandler:
         # Read BT Data
         numBytes = self.bt.in_waiting
         if numBytes > 0:
-            self._btRecieveStr = self._btRecieveStr + \
+            self._btReceiveStr = self._btReceiveStr + \
                 self.bt.read(numBytes).decode()
         # parse BT data
-        data = self._btRecieveStr
+        data = self._btReceiveStr
         if len(data) == 0:
             return
         if (not data[0].isalpha()):
@@ -212,7 +212,7 @@ class BTHandler:
             except:
                 print('Bad Packet, ignoring')
             endInd = data.find("/")
-        self._btRecieveStr = data
+        self._btReceiveStr = data
 
     def _parseU(self, packet: str):
         packet = packet[1:-1]

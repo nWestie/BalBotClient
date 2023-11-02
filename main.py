@@ -46,7 +46,7 @@ class ControllerMain(MDWidget):
     voltageText = StringProperty("")
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.btHandler = BTHandler.BTHandler("COM8", 1/20)
+        self.btHandler = BTHandler.BTHandler("COM6", 1/20)
         Clock.schedule_interval(self.regularBTUpdate, 1/22)
         self.initGraphs()
 
@@ -195,6 +195,6 @@ class NumSpinner(MDBoxLayout):
 
 
 if __name__ == "__main__":
-    Window.custom_titlebar = True
+    # Window.custom_titlebar = True
     Window.maximize()
     MainApp().run()
