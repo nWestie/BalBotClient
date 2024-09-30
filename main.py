@@ -32,10 +32,6 @@ class VoltGraph(Graph, MDWidget):
 
 
 class ControllerMain(MDWidget):
-
-    # pObj = ObjectProperty(None)
-    # iObj = ObjectProperty(None)
-    # dObj = ObjectProperty(None)
     trimObj = ObjectProperty(None)
     speedObj = ObjectProperty(None)
     enableObj = ObjectProperty(None)
@@ -46,14 +42,15 @@ class ControllerMain(MDWidget):
     consoleText = StringProperty(None)
     voltageText = StringProperty("")
     pidLocked: BooleanProperty = BooleanProperty(None)
+    kP: NumericProperty = NumericProperty(0)
+    kI: NumericProperty = NumericProperty(0)
+    kD: NumericProperty = NumericProperty(0)
 
     def __init__(self, *args, **kwargs):
-        self.kP: float = 0
-        self.kI: float = 0
-        self.kD: float = 0
-        
+
         super().__init__(*args, **kwargs)
-        self.btHandler:btHandler.BTHandler = btHandler.BTHandler("COM6", self, 1/20)
+        self.btHandler: btHandler.BTHandler = btHandler.BTHandler(
+            "COM6", self, 1/20)
         # Clock.schedule_interval(self.regularBTUpdate, 1/22)
         self.initGraphs()
 
@@ -66,19 +63,6 @@ class ControllerMain(MDWidget):
         # self.voltLine.points = []
         # self.actDegLine.points = []
         # self.setDegLine.points = []
-
-        # if not connected, return
-
-        # pid Locking
-        # if self.pidLocked and self.btHandler.get("PIDenable"):
-        #     pidVals = self.btHandler.getMany('p', 'i', 'd')
-        #     self.pObj.value = pidVals['p']
-        #     self.iObj.value = pidVals['i']
-        #     self.dObj.value = pidVals['d']
-        #     self.pidLocked = False
-        #     print('PID enabled')
-        # elif not self.btHandler.get('PIDenable'):
-        #     self.pidLocked = True
 
         # update speed and trim
         # self.btHandler.set(speed=self.speedObj.value, trim=self.trimObj.value)
@@ -123,16 +107,16 @@ class ControllerMain(MDWidget):
         self.btStatus.text = status
         self.connectLockout = not connected
         # PID controls must be relocked when connection is lost
-        if(not connected):
+        if (not connected):
             self.pidLocked = True
 
-    def set_pid_status(self, kp:float,ki:float,kd:float, enable_input):
+    def set_pid_status(self, kp: float, ki: float, kd: float, enable_input):
         self.kP = kp
         self.kI = ki
         self.kD = kd
         self.pidLocked = not enable_input
         print("unlocking pid")
-        
+
     def initGraphs(self):
         self.voltLine = MeshLinePlot(color=[1, 0, 0, 1])
         # self.voltLine.points = [(x/20, .1) for x in range(300)]
@@ -149,7 +133,8 @@ class ControllerMain(MDWidget):
         self.graphStack.add_widget(self.mainGraph)
 
     def sendPID_pressed(self, save=False):
-        self.btHandler.request_action(partial(self.btHandler.sendPID, self.kP, self.kI, self.kD, save))
+        self.btHandler.request_action(
+            partial(self.btHandler.sendPID, self.kP, self.kI, self.kD, save))
 
     def savePID(self):
         pass
@@ -161,9 +146,9 @@ class ControllerMain(MDWidget):
         print(f"Connect pressed, state={state}")
         self.connectBtn.disabled = True
         if (state == 'down'):
-            self.btHandler.request_action(self.btHandler.connect) 
+            self.btHandler.request_action(self.btHandler.connect)
         elif (state == 'normal'):
-            self.btHandler.request_action(self.btHandler.disconnect) 
+            self.btHandler.request_action(self.btHandler.disconnect)
 
 
 class MainApp(MDApp):
@@ -186,6 +171,7 @@ class MainApp(MDApp):
 class NumSpinner(MDBoxLayout):
     step = NumericProperty(1)
     min = NumericProperty(1)
+    value = NumericProperty(0)
 
     def plusPressed(self):
         self.value += self.step

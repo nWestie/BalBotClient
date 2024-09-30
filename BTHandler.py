@@ -287,6 +287,7 @@ class BTHandler:
             #     port=self._port, baudrate=38400, timeout=.25)
             Clock.schedule_once(lambda dt :self._gui.connect_gui_update(True,False, f"Connected on {self._port}"), -1)
             print('connected')
+            # TODO: remove - testing - disable pid lock after being connected for a bit
             Clock.schedule_once(lambda dt:self._gui.set_pid_status(1,2,3,True), 3)
 
             self._lastPacketTime = time()
