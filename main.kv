@@ -110,8 +110,8 @@
     btStatus: btStatus
     graphStack: graphStack
     step: 1
-    pidLockout: True
-    connectLockout: True
+    pidLockout: False
+    connectLockout: False
     consoleText: '\n'*15
 
     MDAnchorLayout: #PID/Trim controls
@@ -125,7 +125,7 @@
             size_hint: .3 , 1
             width: '350dp'
             # adaptive_height: True
-            MDBoxLayout:
+            MDBoxLayout: # Step Size selection
                 orientation: 'horizontal'
                 size_hint: 1, None
                 height: '60dp'
@@ -133,17 +133,17 @@
                 spacing: '8dp'
                 StepButton:
                     text: "5"
-                    on_press: root.stepPressed(self.text)
+                    on_press: root.step = 5
                 StepButton:
                     text: "1"
                     state: "down"
-                    on_press: root.stepPressed(self.text)
+                    on_press: root.step = 1
                 StepButton:
                     text: ".1"
-                    on_press: root.stepPressed(self.text)
+                    on_press: root.step = .1
                 StepButton:
                     text: ".01"
-                    on_press: root.stepPressed(self.text)
+                    on_press: root.step = 0.01
             NumSpinner:
                 id: trimObj
                 name: "Trim"
@@ -202,29 +202,30 @@
             spacing: '10dp'
             orientation: 'vertical'
             adaptive_size: True
-            Toggle:
+            Toggle: # Enable button
                 id: enableObj
                 text: 'ENABLE' if self.state == 'normal' else 'DISABLE'
                 font_size: 70
                 disabled: root.connectLockout
-                on_press: root.enablePressed(self.state)
-            MDBoxLayout:
+                on_press: root.btHandler.setEnable(self.state == 'down')
+
+            MDBoxLayout: 
                 orientation: 'horizontal'
                 adaptive_height: True
                 spacing: dp(15)
-                MDLabel:
+                MDLabel: # Voltage readout
                     valign: 'center'
                     halign: 'right'
                     font_size: '20dp'
                     text: root.voltageText
-                Toggle:
+                Toggle: # Connect button
                     id: connectBtn
                     pos_hint: {'right':1}
                     text: 'Connect'
                     font_size: 30
                     line_width: '2dp'
                     on_press: root.connectPressed(self.state)
-            MDBoxLayout:
+            MDBoxLayout: #Bluetooth status message
                 id: btStatus
                 adaptive_height: True
                 orientation: 'horizontal'
@@ -265,7 +266,7 @@
                 orientation: 'lr-tb'
                 padding: dp(10), dp(20)
                 spacing: dp(10)
-                MDRelativeLayout:
+                MDRelativeLayout: #Text console
                     size_hint: .5, 1/3
                     pos_hint: {'center_y': 0}
                     TextInput:

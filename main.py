@@ -44,10 +44,11 @@ class ControllerMain(MDWidget):
     connectLockout = BooleanProperty(None)
     consoleText = StringProperty(None)
     voltageText = StringProperty("")
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.btHandler = BTHandler.BTHandler("COM6", 1/20)
-        Clock.schedule_interval(self.regularBTUpdate, 1/22)
+        self.btHandler = BTHandler.BTHandler("COM6", self, 1/20)
+        # Clock.schedule_interval(self.regularBTUpdate, 1/22)
         self.initGraphs()
 
     def regularBTUpdate(self, _):
@@ -70,55 +71,56 @@ class ControllerMain(MDWidget):
             else:
                 self.connectBtn.text = 'Disconnect'
                 self.connectLockout = False
-                
 
         # if not connected, return
-        if (self.connectBtn.state != 'down'):
-            return
+        # if (self.connectBtn.state != 'down'):
+        #     return
 
         # pid Locking
-        if self.pidLockout and self.btHandler.get("PIDenable"):
-            pidVals = self.btHandler.getMany('p', 'i', 'd')
-            self.pObj.value = pidVals['p']
-            self.iObj.value = pidVals['i']
-            self.dObj.value = pidVals['d']
-            self.pidLockout = False
-            print('PID enabled')
-        elif not self.btHandler.get('PIDenable'):
-            self.pidLockout = True
+        # if self.pidLockout and self.btHandler.get("PIDenable"):
+        #     pidVals = self.btHandler.getMany('p', 'i', 'd')
+        #     self.pObj.value = pidVals['p']
+        #     self.iObj.value = pidVals['i']
+        #     self.dObj.value = pidVals['d']
+        #     self.pidLockout = False
+        #     print('PID enabled')
+        # elif not self.btHandler.get('PIDenable'):
+        #     self.pidLockout = True
 
         # update speed and trim
-        self.btHandler.set(speed=self.speedObj.value, trim=self.trimObj.value)
+        # self.btHandler.set(speed=self.speedObj.value, trim=self.trimObj.value)
         # get logging and update UI
-        botData = self.btHandler.getMany("messages", 'logs')
-        self.btHandler.clearLists('messages', 'logs')
+        # botData = self.btHandler.getMany("messages", 'logs')
+        # self.btHandler.clearLists('messages', 'logs')
 
-        self.enableObj.state = 'down' if self.btHandler.isEnabled() else 'normal'
+        # self.enableObj.state = 'down' if self.btHandler.isEnabled() else 'normal'
 
-        for message in botData['messages']:
-            self.consoleText += (message)
-        if self.consoleText.count('\n') > 10:
-            lines = self.consoleText.splitlines(True)[-10:]
-            self.consoleText = "".join(lines)
-        
-        if not botData['logs']:
-            return
-        for packet in botData['logs']:
-            self.voltLine.points.append((packet[0], packet[1]))
-            self.setDegLine.points.append((packet[0], packet[2]))
-            self.actDegLine.points.append((packet[0], packet[3]))
-        self.voltageText = str(self.voltLine.points[-1][1])+ ' V'
-        # Scroll Graphs if needed
-        if self.voltLine.points[-1][0] > self.voltGraph.xmax:
-            self.voltLine.points = self.voltLine.points[-301:]
-            self.setDegLine.points = self.setDegLine.points[-301:]
-            self.actDegLine.points = self.actDegLine.points[-301:]
-            max = self.voltLine.points[-1][0]
-            min = max - 15
-            self.voltGraph.xmin = min
-            self.voltGraph.xmax = max
-            self.mainGraph.xmin = min
-            self.mainGraph.xmax = max
+        # for message in botData['messages']:
+        #     self.consoleText += (message)
+        # if self.consoleText.count('\n') > 10:
+        #     lines = self.consoleText.splitlines(True)[-10:]
+        #     self.consoleText = "".join(lines)
+
+        # if not botData['logs']:
+        #     return
+        # for packet in botData['logs']:
+        #     self.voltLine.points.append((packet[0], packet[1]))
+        #     self.setDegLine.points.append((packet[0], packet[2]))
+        #     self.actDegLine.points.append((packet[0], packet[3]))
+        # self.voltageText = str(self.voltLine.points[-1][1]) + ' V'
+        # # Scroll Graphs if needed
+        # if self.voltLine.points[-1][0] > self.voltGraph.xmax:
+        #     self.voltLine.points = self.voltLine.points[-301:]
+        #     self.setDegLine.points = self.setDegLine.points[-301:]
+        #     self.actDegLine.points = self.actDegLine.points[-301:]
+        #     max = self.voltLine.points[-1][0]
+        #     min = max - 15
+        #     self.voltGraph.xmin = min
+        #     self.voltGraph.xmax = max
+        #     self.mainGraph.xmin = min
+        #     self.mainGraph.xmax = max
+        pass
+
 
     def initGraphs(self):
         self.voltLine = MeshLinePlot(color=[1, 0, 0, 1])
@@ -144,12 +146,6 @@ class ControllerMain(MDWidget):
         self.btHandler.set(p=self.pObj.value,
                            i=self.iObj.value, d=self.dObj.value)
         self.btHandler.set(sendPID=True, savePID=True)
-
-    def enablePressed(self, state):
-        self.btHandler.setEnable(state == 'down')
-
-    def stepPressed(self, buttonText):
-        self.step = float(buttonText)
 
     def connectPressed(self, state):
         self.connectBtn.disabled = True
@@ -196,5 +192,5 @@ class NumSpinner(MDBoxLayout):
 
 if __name__ == "__main__":
     # Window.custom_titlebar = True
-    Window.maximize()
+    # Window.maximize()
     MainApp().run()

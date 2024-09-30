@@ -5,14 +5,18 @@ from datetime import datetime
 from csv import writer
 from os.path import isdir
 from os import makedirs
+from kivymd.uix.widget import MDWidget
+
 
 ENABLECODE = 213
 DISABLECODE = 226
+
+
 class BTHandler:
     """Controls all communication between GUI and Robot\n
     The interface must provide/request the data it needs using set() and get() methods"""
 
-    def __init__(self, port: str, loopSpeed=1/20):
+    def __init__(self, port: str, gui: MDWidget, loopSpeed: float = 1/20):
         self._lock = Lock()
         # Lock required when reading/writing to any of these variables
         self._requestConnect = False
@@ -81,6 +85,7 @@ class BTHandler:
             return self._enable
 
     def setEnable(self, enable):
+        print(f"Enable: {enable}")
         with self._lock:
             self._enable = enable
             self._pendingEnable = True
@@ -127,7 +132,8 @@ class BTHandler:
                     self._pidFile = open(
                         folderName+'\\'+timeStr+'-pid.csv', 'w', newline='')
                     self._dataWriter = writer(self._datFile)
-                    self._pidWriter = writer(self._pidFile) #TODO: pid save doesn't seem to be working?
+                    # TODO: pid save doesn't seem to be working?
+                    self._pidWriter = writer(self._pidFile)
                 continue
             elif status[1] and (status[2] or not status[0]):
                 self._disconnect()
@@ -145,8 +151,8 @@ class BTHandler:
             if status[1]:  # if connected
                 self._recieveBtData()
                 self._sendBTData()
-                
-                if (time() - self._lastPacketTime)>.25:
+
+                if (time() - self._lastPacketTime) > .25:
                     with self._lock:
                         self._requestConnect = False
                         self._connectionStatus = 'Error: Connection Lost'
@@ -165,26 +171,26 @@ class BTHandler:
             sendEnable = ENABLECODE if self._enable else DISABLECODE
         updateStr = "U{},{},{:.2f},{}/".format(
             int(sData['speed']), int(sData['turn']), sData['trim'], sendEnable)
-        self.bt.write(updateStr.encode('ascii'))
-        if reqPID:
-            self.bt.write("R/".encode('ascii'))
-        elif sData['sendPID']:
-            pidStr = "P{},{},{}/".format(sData['p'], sData['i'], sData['d'])
-            self.bt.write(pidStr.encode('ascii'))
-            with self._lock:
-                self._fromController['sendPID'] = False
+        # self.bt.write(updateStr.encode('ascii'))
+        # if reqPID:
+        #     self.bt.write("R/".encode('ascii'))
+        # elif sData['sendPID']:
+        #     pidStr = "P{},{},{}/".format(sData['p'], sData['i'], sData['d'])
+        #     self.bt.write(pidStr.encode('ascii'))
+        #     with self._lock:
+        #         self._fromController['sendPID'] = False
 
-        if sData['savePID']:
-            self.bt.write("S/".encode('ascii'))
-            with self._lock:
-                self._fromController['savePID'] = False
+        # if sData['savePID']:
+        #     self.bt.write("S/".encode('ascii'))
+        #     with self._lock:
+        #         self._fromController['savePID'] = False
 
     def _recieveBtData(self):
         # Read BT Data
-        numBytes = self.bt.in_waiting
-        if numBytes > 0:
-            self._btReceiveStr = self._btReceiveStr + \
-                self.bt.read(numBytes).decode()
+        # numBytes = self.bt.in_waiting
+        # if numBytes > 0:
+        #     self._btReceiveStr = self._btReceiveStr + \
+        #         self.bt.read(numBytes).decode()
         # parse BT data
         data = self._btReceiveStr
         if len(data) == 0:
@@ -257,7 +263,9 @@ class BTHandler:
         Returns true if connection was successful"""
         try:
             print('connecting...')
-            self.bt = serial.Serial(port=self._port, baudrate=38400, timeout=.25)
+            sleep(1)
+            # self.bt = serial.Serial(
+            #     port=self._port, baudrate=38400, timeout=.25)
             print('connected')
             self._lastPacketTime = time()
             with self._lock:
@@ -278,7 +286,8 @@ class BTHandler:
         Returns true if disconnection is sucessful."""
         try:
             print('disconnecting')
-            self.bt.close()
+            # self.bt.close()
+            sleep(1)
             print("Closed BT COM Port")
             with self._lock:
                 self._connected = False
