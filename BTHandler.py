@@ -5,45 +5,49 @@ from datetime import datetime
 from csv import writer
 from os.path import isdir
 from os import makedirs
-from kivymd.uix.widget import MDWidget
-
-
-ENABLECODE = 213
-DISABLECODE = 226
+from kivy.clock import Clock
+import queue
+from typing import Callable
+from main import ControllerMain
+# ENABLECODE = 213
+# DISABLECODE = 226
 
 
 class BTHandler:
     """Controls all communication between GUI and Robot\n
     The interface must provide/request the data it needs using set() and get() methods"""
 
-    def __init__(self, port: str, gui: MDWidget, loopSpeed: float = 1/20):
+    def __init__(self, port: str, gui: ControllerMain, loopSpeed: float = 1/20):
+        self.action_queue: queue.Queue[Callable[..., None]] = queue.Queue()
+        self._gui: ControllerMain = gui
         self._lock = Lock()
-        # Lock required when reading/writing to any of these variables
-        self._requestConnect = False
         self._connected = False
-        self._connectionStatus = ''
         self._requestExit = False
-        self._dataWriter = None
+
+        # # Lock required when reading/writing to any of these variables
+        # self._requestConnect = False
+        # self._connectionStatus = ''
+        # self._dataWriter = None
         self._enable = False
-        self._pendingEnable = False
-        self._toController = {
-            'p': -1,
-            'i': -1,
-            'd': -1,
-            'logs': [],
-            'messages': [],
-            'PIDenable': False,
-        }
-        self._fromController = {
-            'p': -1,
-            'i': -1,
-            'd': -1,
-            'speed': 0,
-            'turn': 0,
-            'trim': 0,
-            'sendPID': False,
-            'savePID': False,
-        }
+        # self._pendingEnable = False
+        # self._toController = {
+        #     'p': -1,
+        #     'i': -1,
+        #     'd': -1,
+        #     'logs': [],
+        #     'messages': [],
+        #     'PIDenable': False,
+        # }
+        # self._fromController = {
+        #     'p': -1,
+        #     'i': -1,
+        #     'd': -1,
+        #     'speed': 0,
+        #     'turn': 0,
+        #     'trim': 0,
+        #     'sendPID': False,
+        #     'savePID': False,
+        # }
         # Lock not needed for vars below, only used by worker thread
         self._port = port
         self._lastPacketTime = time()
@@ -52,33 +56,35 @@ class BTHandler:
         self._loopSpeed = loopSpeed
         self._workerThread = Thread(target=self._btWorker)
         self._workerThread.start()
+    def request_action(self, action: Callable):
+        self.action_queue.put(action)
 
-    def getMany(self, *args):
-        retVals = {}
-        with self._lock:
-            for key in args:
-                if key in self._toController.keys():
-                    retVals[key] = self._toController[key]
-        return retVals
+    # def getMany(self, *args):
+    #     retVals = {}
+    #     with self._lock:
+    #         for key in args:
+    #             if key in self._toController.keys():
+    #                 retVals[key] = self._toController[key]
+    #     return retVals
 
-    def get(self, arg):
-        with self._lock:
-            if arg in self._toController.keys():
-                return self._toController[arg]
+    # def get(self, arg):
+    #     with self._lock:
+    #         if arg in self._toController.keys():
+    #             return self._toController[arg]
 
-    def set(self, **kwargs):
-        with self._lock:
-            for key, val in kwargs.items():
-                if key in self._fromController.keys():
-                    self._fromController[key] = val
+    # def set(self, **kwargs):
+    #     with self._lock:
+    #         for key, val in kwargs.items():
+    #             if key in self._fromController.keys():
+    #                 self._fromController[key] = val
 
-    def clearLists(self, *args):
-        if len(args) == 0:
-            args = ['messages', 'logs']
-        with self._lock:
-            for listName in args:
-                if listName in self._toController.keys():
-                    self._toController[listName] = []
+    # def clearLists(self, *args):
+    #     if len(args) == 0:
+    #         args = ['messages', 'logs']
+    #     with self._lock:
+    #         for listName in args:
+    #             if listName in self._toController.keys():
+    #                 self._toController[listName] = []
 
     def isEnabled(self):
         with self._lock:
@@ -121,41 +127,47 @@ class BTHandler:
         sendInterval = self._loopSpeed
         nextSendTime = time()+sendInterval
         while (True):
+            # Get the next task from the queue and execute it (blocking call)
+            if(self.action_queue.qsize()>0):
+                task = self.action_queue.get(timeout=1)  # Wait max 1 second for a task
+                print(f"Running task: {task}")
+                task()  # Execute the function
+            # with self._lock:
+            #     status = (self._requestConnect,
+            #               self._connected, self._requestExit)
+            # if status[0] and not status[1]:
+            #     if self._connect():
+            #         # Logging rate is roughly 1.6 MB/hr
+            #         self._datFile = open(
+            #             folderName+'\\'+timeStr+'-data.csv', 'w', newline='')
+            #         self._pidFile = open(
+            #             folderName+'\\'+timeStr+'-pid.csv', 'w', newline='')
+            #         self._dataWriter = writer(self._datFile)
+            #         # TODO: pid save doesn't seem to be working?
+            #         self._pidWriter = writer(self._pidFile)
+            #     continue
+            # elif status[1] and (status[2] or not status[0]):
+            #     self._disconnect()
+            #     try:
+            #         self._datFile.close()
+            #         self._pidFile.close()
+            #         self._dataWriter = None
+            #         self._pidWriter = None
+            #     except:
+            #         print('failed to close files')
+            #     print("Data Saved as \"{}\\{}-*.csv\"".format(folderName, timeStr))
+            #     continue
             with self._lock:
-                status = (self._requestConnect,
-                          self._connected, self._requestExit)
-            if status[0] and not status[1]:
-                if self._connect():
-                    # Logging rate is roughly 1.6 MB/hr
-                    self._datFile = open(
-                        folderName+'\\'+timeStr+'-data.csv', 'w', newline='')
-                    self._pidFile = open(
-                        folderName+'\\'+timeStr+'-pid.csv', 'w', newline='')
-                    self._dataWriter = writer(self._datFile)
-                    # TODO: pid save doesn't seem to be working?
-                    self._pidWriter = writer(self._pidFile)
-                continue
-            elif status[1] and (status[2] or not status[0]):
-                self._disconnect()
-                try:
-                    self._datFile.close()
-                    self._pidFile.close()
-                    self._dataWriter = None
-                    self._pidWriter = None
-                except:
-                    print('failed to close files')
-                print("Data Saved as \"{}\\{}-*.csv\"".format(folderName, timeStr))
-                continue
-            if status[2]:
-                break
-            if status[1]:  # if connected
-                self._recieveBtData()
-                self._sendBTData()
+                if self._requestExit:
+                    break
+            # if status[1]:  # if connected
+            #     self._recieveBtData()
+            #     self._sendBTData()
 
-                if (time() - self._lastPacketTime) > .25:
-                    with self._lock:
-                        self._requestConnect = False
-                        self._connectionStatus = 'Error: Connection Lost'
+            #     if (time() - self._lastPacketTime) > .25:
+            #         with self._lock:
+            #             self._requestConnect = False
+            #             self._connectionStatus = 'Error: Connection Lost'
             # wait for time before looping
             sleeptime = nextSendTime-time()
             if (sleeptime > 0):  # sits here for 99.9% of time
@@ -165,12 +177,13 @@ class BTHandler:
         print("bt worker closing")
 
     def _sendBTData(self):
-        with self._lock:
-            sData = self._fromController.copy()
-            reqPID = not self._toController['PIDenable']
-            sendEnable = ENABLECODE if self._enable else DISABLECODE
-        updateStr = "U{},{},{:.2f},{}/".format(
-            int(sData['speed']), int(sData['turn']), sData['trim'], sendEnable)
+        pass
+        # with self._lock:
+        #     sData = self._fromController.copy()
+        #     reqPID = not self._toController['PIDenable']
+        #     sendEnable = ENABLECODE if self._enable else DISABLECODE
+        # updateStr = "U{},{},{:.2f},{}/".format(
+        #     int(sData['speed']), int(sData['turn']), sData['trim'], sendEnable)
         # self.bt.write(updateStr.encode('ascii'))
         # if reqPID:
         #     self.bt.write("R/".encode('ascii'))
@@ -184,6 +197,11 @@ class BTHandler:
         #     self.bt.write("S/".encode('ascii'))
         #     with self._lock:
         #         self._fromController['savePID'] = False
+    def sendPID(self, kP: float, kI:float, kD:float, save = False)->None:
+        if(save):
+            print(f"Saving PID: {[kP, kI, kD]}")
+        else:
+            print(f"Sending PID: {[kP, kI, kD]}")
 
     def _recieveBtData(self):
         # Read BT Data
@@ -258,45 +276,44 @@ class BTHandler:
         with self._lock:
             self._pendingEnable = False
 
-    def _connect(self):
-        """Opens BT Serial Connection\n
+    def connect(self):
+        """Opens BT Serial Connection - DO NOT CALL DIRECTLY, load into queue\n
         Returns true if connection was successful"""
         try:
             print('connecting...')
-            sleep(1)
+            Clock.schedule_once(lambda dt :self._gui.connect_gui_update(False,True, "Connecting..."), -1)
+            sleep(1.5)
             # self.bt = serial.Serial(
             #     port=self._port, baudrate=38400, timeout=.25)
+            Clock.schedule_once(lambda dt :self._gui.connect_gui_update(True,False, f"Connected on {self._port}"), -1)
             print('connected')
+            Clock.schedule_once(lambda dt:self._gui.set_pid_status(1,2,3,True), 3)
+
             self._lastPacketTime = time()
             with self._lock:
                 self._connected = True
-                self._connectionStatus = "Connected on "+self._port
             return True
         except:
             print("Bluetooth Connection Error")
             with self._lock:
                 self._connected = False
-                # will not keep trying until it succeeds, needs to be requested again
-                self._requestConnect = False
-                self._connectionStatus = "Connection Error"
+            Clock.schedule_once(lambda dt :self._gui.connect_gui_update(False,False, "Could not connect"), -1)
             return False
 
-    def _disconnect(self):
+    def disconnect(self):
         """Closes BT connection\n
         Returns true if disconnection is sucessful."""
         try:
             print('disconnecting')
+            Clock.schedule_once(lambda dt :self._gui.connect_gui_update(True, True, "Disconnecting..."), -1)
             # self.bt.close()
             sleep(1)
             print("Closed BT COM Port")
+            Clock.schedule_once(lambda dt :self._gui.connect_gui_update(False, False, "Disconnected"), -1)
             with self._lock:
                 self._connected = False
-                self._requestConnect = False
-                self._connectionStatus = "Disconnected"
-                self._toController['PIDenable'] = False
         except:
             print("Error Closing BT connection")
+            Clock.schedule_once(lambda dt :self._gui.connect_gui_update(False, False, "Error Disconnecting"), -1)
             with self._lock:
                 self._connected = True
-                self._requestConnect = True
-                self._connectionStatus = "Failed to Disconnect"

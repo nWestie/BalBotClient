@@ -110,8 +110,8 @@
     btStatus: btStatus
     graphStack: graphStack
     step: 1
-    pidLockout: False
-    connectLockout: False
+    pidLocked: True # PID input until current values recieved from bot
+    connectLockout: True # all bot controls locked when not connected
     consoleText: '\n'*15
 
     MDAnchorLayout: #PID/Trim controls
@@ -159,21 +159,24 @@
             NumSpinner:
                 id: pObj
                 name: "kP"
-                value: 1.0
+                value: root.kP
                 step: root.step
-                disabled: root.pidLockout
+                on_value: root.kP = self.value
+                disabled: root.pidLocked
             NumSpinner:
                 id: iObj
                 name: 'kI'
-                value: 2.0
+                value: root.kI
                 step: root.step
-                disabled: root.pidLockout
+                on_value: root.kI = self.value
+                disabled: root.pidLocked
             NumSpinner:
                 id: dObj
                 name: 'kD'
-                value: 3.0
+                value: root.kD
                 step: root.step
-                disabled: root.pidLockout
+                on_value: root.kD = self.value
+                disabled: root.pidLocked
             MDBoxLayout:
                 size_hint: .5, None
                 adaptive_width: True
@@ -182,16 +185,16 @@
                 pos_hint: {'right': 1}
                 spacing: '7dp'
                 padding: '7dp'
+                disabled: root.pidLocked
                 MDRaisedButton:
                     size_hint: None, 1
                     text: 'SEND PID'
-                    on_press: root.sendPID()
-                    disabled: root.pidLockout
+                    on_press: root.sendPID_pressed(False)
                 MDRaisedButton:
                     size_hint: None, 1
                     text: 'SAVE PID'
-                    on_press: root.savePID()
-                    disabled: root.pidLockout
+                    on_press: root.sendPID_pressed(True)
+                    # disabled: root.pidLocked
     
     AnchorLayout: #Top Right controls
         size: root.size
@@ -221,10 +224,10 @@
                 Toggle: # Connect button
                     id: connectBtn
                     pos_hint: {'right':1}
-                    text: 'Connect'
+                    text: 'CONNECT'
                     font_size: 30
                     line_width: '2dp'
-                    on_press: root.connectPressed(self.state)
+                    on_press: root.connect_pressed(self.state)
             MDBoxLayout: #Bluetooth status message
                 id: btStatus
                 adaptive_height: True

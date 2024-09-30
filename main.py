@@ -8,7 +8,8 @@ from kivymd.uix.behaviors.toggle_behavior import MDToggleButton
 from kivy.properties import ObjectProperty, NumericProperty, BooleanProperty, StringProperty
 from kivymd.uix.slider import MDSlider
 from kivy_garden.graph import Graph, MeshLinePlot
-import BTHandler
+import btHandler
+from functools import partial
 
 
 class SprungSlider(MDSlider):
@@ -31,61 +32,53 @@ class VoltGraph(Graph, MDWidget):
 
 
 class ControllerMain(MDWidget):
-    pObj = ObjectProperty(None)
-    iObj = ObjectProperty(None)
-    dObj = ObjectProperty(None)
+
+    # pObj = ObjectProperty(None)
+    # iObj = ObjectProperty(None)
+    # dObj = ObjectProperty(None)
     trimObj = ObjectProperty(None)
     speedObj = ObjectProperty(None)
     enableObj = ObjectProperty(None)
     connectBtn = ObjectProperty(None)
     btStatus = ObjectProperty(None)
     graphStack = ObjectProperty(None)
-    pidLockout = BooleanProperty(None)
     connectLockout = BooleanProperty(None)
     consoleText = StringProperty(None)
     voltageText = StringProperty("")
+    pidLocked: BooleanProperty = BooleanProperty(None)
 
     def __init__(self, *args, **kwargs):
+        self.kP: float = 0
+        self.kI: float = 0
+        self.kD: float = 0
+        
         super().__init__(*args, **kwargs)
-        self.btHandler = BTHandler.BTHandler("COM6", self, 1/20)
+        self.btHandler:btHandler.BTHandler = btHandler.BTHandler("COM6", self, 1/20)
         # Clock.schedule_interval(self.regularBTUpdate, 1/22)
         self.initGraphs()
 
     def regularBTUpdate(self, _):
-        status = self.btHandler.connectionStatus()
-        if (status):
-            self.btStatus.working = False
-            self.btStatus.text = status
-            self.connectBtn.disabled = False
-            if status.lower().find("error") != -1:  # error connecting/disconnecting
-                self.connectBtn.text = 'Connect'
-                self.connectBtn.state = 'normal'
-            if self.connectBtn.state == 'normal':
-                self.connectLockout = True
-                self.connectBtn.text = 'Connect'
-                self.voltageText = ""
-                self.consoleText = ""
-                self.voltLine.points = []
-                self.actDegLine.points = []
-                self.setDegLine.points = []
-            else:
-                self.connectBtn.text = 'Disconnect'
-                self.connectLockout = False
+        # status = self.btHandler.connectionStatus()
+
+        # # these should be called on connection:
+        # self.voltageText = ""
+        # self.consoleText = ""
+        # self.voltLine.points = []
+        # self.actDegLine.points = []
+        # self.setDegLine.points = []
 
         # if not connected, return
-        # if (self.connectBtn.state != 'down'):
-        #     return
 
         # pid Locking
-        # if self.pidLockout and self.btHandler.get("PIDenable"):
+        # if self.pidLocked and self.btHandler.get("PIDenable"):
         #     pidVals = self.btHandler.getMany('p', 'i', 'd')
         #     self.pObj.value = pidVals['p']
         #     self.iObj.value = pidVals['i']
         #     self.dObj.value = pidVals['d']
-        #     self.pidLockout = False
+        #     self.pidLocked = False
         #     print('PID enabled')
         # elif not self.btHandler.get('PIDenable'):
-        #     self.pidLockout = True
+        #     self.pidLocked = True
 
         # update speed and trim
         # self.btHandler.set(speed=self.speedObj.value, trim=self.trimObj.value)
@@ -121,7 +114,25 @@ class ControllerMain(MDWidget):
         #     self.mainGraph.xmax = max
         pass
 
+    def connect_gui_update(self, connected: bool, in_progress: bool, status: str):
+        """When connection state changes, updates the gui lockouts, btStatus, and connect button states"""
+        self.btStatus.working = in_progress
+        self.connectBtn.disabled = in_progress
+        self.connectBtn.state = 'down' if connected else 'normal'
+        self.connectBtn.text = 'DISCONNECT' if connected else 'CONNECT'
+        self.btStatus.text = status
+        self.connectLockout = not connected
+        # PID controls must be relocked when connection is lost
+        if(not connected):
+            self.pidLocked = True
 
+    def set_pid_status(self, kp:float,ki:float,kd:float, enable_input):
+        self.kP = kp
+        self.kI = ki
+        self.kD = kd
+        self.pidLocked = not enable_input
+        print("unlocking pid")
+        
     def initGraphs(self):
         self.voltLine = MeshLinePlot(color=[1, 0, 0, 1])
         # self.voltLine.points = [(x/20, .1) for x in range(300)]
@@ -137,26 +148,22 @@ class ControllerMain(MDWidget):
         self.mainGraph.add_plot(self.actDegLine)
         self.graphStack.add_widget(self.mainGraph)
 
-    def sendPID(self):
-        self.btHandler.set(p=self.pObj.value,
-                           i=self.iObj.value, d=self.dObj.value)
-        self.btHandler.set(sendPID=True)
+    def sendPID_pressed(self, save=False):
+        self.btHandler.request_action(partial(self.btHandler.sendPID, self.kP, self.kI, self.kD, save))
 
     def savePID(self):
-        self.btHandler.set(p=self.pObj.value,
-                           i=self.iObj.value, d=self.dObj.value)
-        self.btHandler.set(sendPID=True, savePID=True)
+        pass
+        # self.btHandler.set(p=self.pObj.value,
+        #                    i=self.iObj.value, d=self.dObj.value)
+        # self.btHandler.set(sendPID=True, savePID=True)
 
-    def connectPressed(self, state):
+    def connect_pressed(self, state):
+        print(f"Connect pressed, state={state}")
         self.connectBtn.disabled = True
-        self.btStatus.working = True
         if (state == 'down'):
-            self.btHandler.requestConnect()
-            self.connectBtn.text = "Disconnect"
-            self.btStatus.text = "Connecting..."
+            self.btHandler.request_action(self.btHandler.connect) 
         elif (state == 'normal'):
-            self.btHandler.requestConnect(disconnect=True)
-            self.btStatus.text = "disconnecting..."
+            self.btHandler.request_action(self.btHandler.disconnect) 
 
 
 class MainApp(MDApp):
@@ -192,5 +199,5 @@ class NumSpinner(MDBoxLayout):
 
 if __name__ == "__main__":
     # Window.custom_titlebar = True
-    # Window.maximize()
+    Window.maximize()
     MainApp().run()
