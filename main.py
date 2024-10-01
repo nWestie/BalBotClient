@@ -32,9 +32,19 @@ class VoltGraph(Graph, MDWidget):
     pass
 
 
+class NumSpinner(MDBoxLayout):
+    step = NumericProperty(1)
+    min = NumericProperty(1)
+    value = NumericProperty(0)
+
+    def textUpdated(self, str):
+        try:
+            self.value = max(float(str), self.min)
+        except:
+            self.text = "{0:.2f}".format(self.value)
+
+
 class ControllerMain(MDWidget):
-    trimObj = ObjectProperty(None)
-    speedObj = ObjectProperty(None)
     enableObj = ObjectProperty(None)
     connectBtn = ObjectProperty(None)
     btStatus = ObjectProperty(None)
@@ -43,6 +53,7 @@ class ControllerMain(MDWidget):
     consoleText = StringProperty(None)
     voltageText = StringProperty("")
     pidLocked: BooleanProperty = BooleanProperty(None)
+    trim: NumericProperty = NumericProperty(0)
     kP: NumericProperty = NumericProperty(0)
     kI: NumericProperty = NumericProperty(0)
     kD: NumericProperty = NumericProperty(0)
@@ -100,10 +111,12 @@ class ControllerMain(MDWidget):
         #     self.mainGraph.xmin = min
         #     self.mainGraph.xmax = max
         pass
+
     def connect_pressed(self, state):
         print(f"Connect pressed, state={state}")
         self.connectBtn.disabled = True
         if (state == 'down'):
+            self.trim = 0
             self.btHandler.request_action(self.btHandler.connect)
         elif (state == 'normal'):
             self.btHandler.request_action(self.btHandler.disconnect)
@@ -123,7 +136,7 @@ class ControllerMain(MDWidget):
     def sendPID_pressed(self, save=False):
         self.btHandler.request_action(
             partial(self.btHandler.sendPID, self.kP, self.kI, self.kD, save))
-        
+
     def pid_gui_update(self, kp: float, ki: float, kd: float, enable_input):
         self.kP = kp
         self.kI = ki
@@ -134,9 +147,14 @@ class ControllerMain(MDWidget):
     def enable_pressed(self, state):
         self.btHandler.request_action(
             partial(self.btHandler.set_enable, state == 'down'))
-    
+
     def enable_gui_update(self, enabled):
         self.enableObj.state = 'down' if enabled else 'normal'
+
+    def trim_changed(self, spinner: NumSpinner):
+        self.trim = spinner.value
+        self.btHandler.request_action(
+            partial(self.btHandler.send_trim, self.trim))
 
     def set_slider(self, val: int):
         with self._joystick_lock:
@@ -145,7 +163,7 @@ class ControllerMain(MDWidget):
     def get_joystick(self) -> tuple[int, int]:
         with self._joystick_lock:
             return self._joystick_val, 0
-        
+
     def initGraphs(self):
         self.voltLine = MeshLinePlot(color=[1, 0, 0, 1])
         # self.voltLine.points = [(x/20, .1) for x in range(300)]
@@ -177,21 +195,6 @@ class MainApp(MDApp):
 
     def on_stop(self):
         self.controller.btHandler.exit()
-
-
-class NumSpinner(MDBoxLayout):
-    step = NumericProperty(1)
-    min = NumericProperty(1)
-    value = NumericProperty(0)
-
-    def plusPressed(self):
-        self.value += self.step
-
-    def minusPressed(self):
-        self.value -= self.step
-
-    def textUpdated(self, str):
-        self.value = max(float(str), self.min)
 
 
 if __name__ == "__main__":

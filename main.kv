@@ -80,7 +80,7 @@
         multiline: False
         write_tab: False
         input_filter: 'float'
-        text: "{0:.3f}".format(root.value)
+        text: "{0:.2f}".format(root.value)
         on_text: root.textUpdated(self.text)
     MDBoxLayout:
         adaptive_width: True
@@ -91,11 +91,11 @@
         MDFloatingActionButton:
             icon: 'chevron-up'
             size_hint: 1, .5
-            on_press: root.plusPressed()
+            on_press: root.value += root.step
         MDFloatingActionButton:
             icon: 'chevron-down'
             size_hint: 1, .5
-            on_press: root.minusPressed()
+            on_press: root.value -= root.step
 
 
 <ControllerMain>
@@ -146,11 +146,12 @@
             NumSpinner:
                 id: trimObj
                 name: "Trim"
-                value: 0
+                value: root.trim
                 min: -90
                 padding: '7dp','15dp'
                 height: "115dp"
                 step: root.step
+                on_value: root.trim_changed(self)
             # MDWidget:
             #     size_hint: 1, None
             #     height: dp(2)

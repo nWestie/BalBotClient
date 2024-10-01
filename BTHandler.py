@@ -1,6 +1,6 @@
 import serial
 from time import time, sleep
-from threading import Thread, Lock
+from threading import Thread, Event
 from datetime import datetime
 from csv import writer
 from os.path import isdir
@@ -20,11 +20,11 @@ class BTHandler:
     def __init__(self, port: str, gui: ControllerMain, loopSpeed: float = 1/20):
         self.action_queue: queue.Queue[Callable[..., None]] = queue.Queue()
         self._gui: ControllerMain = gui
-        self._lock = Lock()
+        self._exit = Event()
         self._connected = False
-        self._requestExit = False
         self._enable = False
         self._port = port
+
         self._lastPacketTime = time()
         self._btReceiveStr = ""
         # Start handler Thread
@@ -35,10 +35,6 @@ class BTHandler:
     def request_action(self, action: Callable):
         self.action_queue.put(action)
 
-    def isEnabled(self):
-        with self._lock:
-            return self._enable
-
     def set_enable(self, enable):
         """Should be called through the request_action"""
         # DECIDE: should this block until enable is acknowledged?
@@ -47,8 +43,7 @@ class BTHandler:
 
     def exit(self):
         """Notifys the worker thread to exit, and blocks until the thread closes."""
-        with self._lock:
-            self._requestExit = True
+        self._exit.set()
         self._workerThread.join()
         sleep(.25)
 
@@ -94,10 +89,9 @@ class BTHandler:
                     nextSendTime = time()+self._loopSpeed
 
             # if main thread is exiting(window closed)
-            with self._lock:
-                if self._requestExit:
-                    self.disconnect()
-                    break
+            if self._exit.is_set():
+                self.disconnect()
+                break
             # If connection seems to have timed out:
             # if self._connected and (time() - self._lastPacketTime) > .25:
             #     # attempt to disconnect and exit
@@ -113,6 +107,9 @@ class BTHandler:
         updateStr = "U{},{}/".format(joy_speed, joy_turn)
         # print(updateStr)
         # self.bt.write(updateStr.encode('ascii'))
+
+    def send_trim(self, trim:float):
+        print(f"Sending trim: {trim}")
 
     def sendPID(self, kP: float, kI: float, kD: float, save=False) -> None:
         if (save):
