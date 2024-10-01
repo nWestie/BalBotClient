@@ -54,7 +54,7 @@ class ControllerMain(MDWidget):
     btStatus = ObjectProperty(None)
     graphStack = ObjectProperty(None)
     connectLockout = BooleanProperty(None)
-    consoleText = StringProperty("Hello")
+    consoleText = StringProperty("Hello\nHello")
     voltageText = StringProperty("")
     pidLocked: BooleanProperty = BooleanProperty(None)
     trim: NumericProperty = NumericProperty(0)
@@ -79,10 +79,11 @@ class ControllerMain(MDWidget):
             self.trim = 0
             self.voltageText = ""
             self.consoleText = ""
-            # self.voltLine.points = []
-            # self.actDegLine.points = []
-            # self.setDegLine.points = []
+            self.cleanup_graph_data(0)
             self.btHandler.request_action(self.btHandler.connect)
+
+            Clock.schedule_interval(
+                lambda dt: self.print_console(f"t={time():.2f}"), 1)
         elif (state == 'normal'):
             self.btHandler.request_action(self.btHandler.disconnect)
 
@@ -130,9 +131,9 @@ class ControllerMain(MDWidget):
         with self._joystick_lock:
             return self._joystick_val, 0
 
-    def console_gui_update(self, text: str):
+    def print_console(self, text: str):
+        self.consoleText += "\n"
         self.consoleText += text
-        print(f"console: {text}")
         # clip length of console
         # if self.consoleText.count('\n') > 30:
         #     lines = self.consoleText.splitlines(True)[-10:]
@@ -155,6 +156,10 @@ class ControllerMain(MDWidget):
             self.cleanup_graph_data(15*20)
 
     def cleanup_graph_data(self, keep_count):
+        if (keep_count == 0):
+            self.volt_plot.points = []
+            self.set_angle_plot.points = []
+            self.act_angle_plot.points = []
         self.volt_plot.points = self.volt_plot.points[-keep_count:]
         self.set_angle_plot.points = self.set_angle_plot.points[-keep_count:]
         self.act_angle_plot.points = self.act_angle_plot.points[-keep_count:]

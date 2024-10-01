@@ -274,16 +274,16 @@
                     size_hint: .5, 1/3
                     pos_hint: {'center_y': 0}
                     TextInput:
-                        foreground_color: 'black'
-                        background_color: 'lightgrey'
+                        foreground_color: "black"
+                        background_color: 'white'
                         halign: 'left'
-                        valign: 'bottom'
-                        mode: 'fill'
+                        padding: dp(10), dp(32), dp(10), dp(10)
                         multiline: True
                         readonly: True
                         scroll_from_swipe: True
-                        font_size: 17
+                        font_size: 24
                         text: root.consoleText
+                        # text: "Hello\nHello\n"
                     MDLabel: #header label for console
                         padding: dp(5), dp(5)
                         md_bg_color: 'grey'

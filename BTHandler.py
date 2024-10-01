@@ -46,7 +46,7 @@ class BTHandler:
         self._workerThread.start()
 
     def print_console(self, msg: str):
-        Clock.schedule_once(lambda dt: self._gui.console_gui_update(msg), -1)
+        Clock.schedule_once(lambda dt: self._gui.print_console(msg), -1)
 
     def request_action(self, action: Callable):
         self.action_queue.put(action)
@@ -65,9 +65,6 @@ class BTHandler:
     def _btWorker(self):
         """Control loop that runs in a seprate thread, handling bluetooth communications"""
         print("BT worker started")
-
-        # # TODO: this happens on disconnect?
-        #
 
         nextSendTime = time()+self._loopSpeed
         while (True):
@@ -137,7 +134,7 @@ class BTHandler:
                     packet[0], lambda __: print('bad-packet'))(packet)
                 self._lastPacketTime = time()
             except:
-                print('Bad Packet, ignoring')
+                self.print_console('Bad Packet, ignoring')
             endInd = data.find("/")
         self._btReceiveStr = data
 
@@ -181,7 +178,7 @@ class BTHandler:
 
     def _parseM(self, packet: str):
         Clock.schedule_once(
-            lambda dt: self._gui.console_gui_update(packet[1:-1]), -1)
+            lambda dt: self._gui.print_console(packet[1:-1]), -1)
 
     def _open_logs(self):
         dateStr = datetime.now().strftime('%m-%d-%y')
@@ -248,7 +245,6 @@ class BTHandler:
             Clock.schedule_once(lambda dt: self._gui.connect_gui_update(
                 True, True, "Disconnecting..."), -1)
             # self.bt.close()
-            sleep(.5)
             print("Closed BT COM Port")
             Clock.schedule_once(lambda dt: self._gui.connect_gui_update(
                 False, False, "Disconnected"), -1)
