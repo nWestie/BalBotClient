@@ -265,7 +265,7 @@
                 adaptive_width: True
                 pos_hint: {'center_y': .4}
                 on_value: root.set_slider(self.value)
-            MDStackLayout:
+            MDStackLayout: #Graphs are added by the root.initGraphs function
                 id: graphStack
                 orientation: 'lr-tb'
                 padding: dp(10), dp(20)
@@ -284,7 +284,7 @@
                         scroll_from_swipe: True
                         font_size: 17
                         text: root.consoleText
-                    MDLabel:
+                    MDLabel: #header label for console
                         padding: dp(5), dp(5)
                         md_bg_color: 'grey'
                         size_hint: 1, None
