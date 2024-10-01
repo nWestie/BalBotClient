@@ -209,7 +209,7 @@
                 text: 'ENABLE' if self.state == 'normal' else 'DISABLE'
                 font_size: 70
                 disabled: root.connectLockout
-                on_press: root.btHandler.setEnable(self.state == 'down')
+                on_press: root.enable_pressed(self.state)
 
             MDBoxLayout: 
                 orientation: 'horizontal'
@@ -263,6 +263,7 @@
                 id: speedObj
                 adaptive_width: True
                 pos_hint: {'center_y': .4}
+                on_value: root.set_slider(self.value)
             MDStackLayout:
                 id: graphStack
                 orientation: 'lr-tb'

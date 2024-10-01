@@ -1,3 +1,4 @@
+import threading
 from kivymd.app import MDApp
 from kivy.clock import Clock
 from kivy.core.window import Window
@@ -52,6 +53,8 @@ class ControllerMain(MDWidget):
         self.btHandler: btHandler.BTHandler = btHandler.BTHandler(
             "COM6", self, 1/20)
         # Clock.schedule_interval(self.regularBTUpdate, 1/22)
+        self._joystick_val = 0
+        self._joystick_lock: threading.Lock = threading.Lock()
         self.initGraphs()
 
     def regularBTUpdate(self, _):
@@ -97,6 +100,13 @@ class ControllerMain(MDWidget):
         #     self.mainGraph.xmin = min
         #     self.mainGraph.xmax = max
         pass
+    def connect_pressed(self, state):
+        print(f"Connect pressed, state={state}")
+        self.connectBtn.disabled = True
+        if (state == 'down'):
+            self.btHandler.request_action(self.btHandler.connect)
+        elif (state == 'normal'):
+            self.btHandler.request_action(self.btHandler.disconnect)
 
     def connect_gui_update(self, connected: bool, in_progress: bool, status: str):
         """When connection state changes, updates the gui lockouts, btStatus, and connect button states"""
@@ -110,13 +120,32 @@ class ControllerMain(MDWidget):
         if (not connected):
             self.pidLocked = True
 
-    def set_pid_status(self, kp: float, ki: float, kd: float, enable_input):
+    def sendPID_pressed(self, save=False):
+        self.btHandler.request_action(
+            partial(self.btHandler.sendPID, self.kP, self.kI, self.kD, save))
+        
+    def pid_gui_update(self, kp: float, ki: float, kd: float, enable_input):
         self.kP = kp
         self.kI = ki
         self.kD = kd
         self.pidLocked = not enable_input
         print("unlocking pid")
 
+    def enable_pressed(self, state):
+        self.btHandler.request_action(
+            partial(self.btHandler.set_enable, state == 'down'))
+    
+    def enable_gui_update(self, enabled):
+        self.enableObj.state = 'down' if enabled else 'normal'
+
+    def set_slider(self, val: int):
+        with self._joystick_lock:
+            self._joystick_val = val
+
+    def get_joystick(self) -> tuple[int, int]:
+        with self._joystick_lock:
+            return self._joystick_val, 0
+        
     def initGraphs(self):
         self.voltLine = MeshLinePlot(color=[1, 0, 0, 1])
         # self.voltLine.points = [(x/20, .1) for x in range(300)]
@@ -131,24 +160,6 @@ class ControllerMain(MDWidget):
         self.mainGraph.add_plot(self.setDegLine)
         self.mainGraph.add_plot(self.actDegLine)
         self.graphStack.add_widget(self.mainGraph)
-
-    def sendPID_pressed(self, save=False):
-        self.btHandler.request_action(
-            partial(self.btHandler.sendPID, self.kP, self.kI, self.kD, save))
-
-    def savePID(self):
-        pass
-        # self.btHandler.set(p=self.pObj.value,
-        #                    i=self.iObj.value, d=self.dObj.value)
-        # self.btHandler.set(sendPID=True, savePID=True)
-
-    def connect_pressed(self, state):
-        print(f"Connect pressed, state={state}")
-        self.connectBtn.disabled = True
-        if (state == 'down'):
-            self.btHandler.request_action(self.btHandler.connect)
-        elif (state == 'normal'):
-            self.btHandler.request_action(self.btHandler.disconnect)
 
 
 class MainApp(MDApp):
