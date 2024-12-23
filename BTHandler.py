@@ -11,10 +11,8 @@ import queue
 from typing import Callable
 from main import ControllerMain
 from enum import Enum
-# ENABLECODE = 213
-# DISABLECODE = 226
-ENABLE_LOGGING = False
 
+ENABLE_LOGGING = False
 
 class En_States(Enum):
     DISABLED = 0
@@ -51,11 +49,6 @@ class BTHandler:
     def request_action(self, action: Callable):
         self.action_queue.put(action)
 
-    def set_enable(self, enable):
-        """Should be called through the request_action"""
-        self._enable = En_States.REQ_ENABLE if enable else En_States.REQ_DISABLE
-        print(f"sending enable: {enable}")
-
     def exit(self):
         """Notifys the worker thread to exit, and blocks until the thread closes."""
         self._exit.set()
@@ -77,9 +70,6 @@ class BTHandler:
                 self._recieveBtData()
 
                 if (time() > nextSendTime):
-                    # dt = time()-startTime
-                    # Clock.schedule_once(lambda __: self._gui.graph_gui_update(
-                    #     dt, 3*math.sin(dt)+3, 3*math.sin(dt)+90, 90), -1)
                     self._send_joystick()
                     nextSendTime = time()+self._loopSpeed
 
@@ -92,24 +82,32 @@ class BTHandler:
     def _send_joystick(self):
         pass
         joy_speed, joy_turn = self._gui.get_joystick()
-        updateStr = "U{},{}/".format(joy_speed, joy_turn)
-        # self.bt.write(updateStr.encode('ascii'))
+        updateStr = f"J{joy_speed:.0f},{joy_turn:.0f}/"
+        self.bt.write(updateStr.encode('ascii'))
 
     def send_trim(self, trim: float):
         print(f"Sending trim: {trim}")
 
     def sendPID(self, kP: float, kI: float, kD: float, save=False) -> None:
+        vals: str = f"{kP:.2f},{kI:.2f},{kD:.2f}"
         if (save):
-            self.print_console(f"Saving PID: {[kP, kI, kD]}")
+            self.bt.write(f"s{vals}/".encode('ascii'))
         else:
             self.print_console(f"Sending PID: {[kP, kI, kD]}")
+            self.bt.write(f"P{vals}/".encode('ascii'))
+
+    def set_enable(self, enable):
+        """Should be called through the request_action"""
+        print(f"sending enable: {enable}")
+        self._enable = En_States.REQ_ENABLE if enable else En_States.REQ_DISABLE
+        self.bt.write(("E/"if enable else "D/").encode('ascii'))
 
     def _recieveBtData(self):
         # Read BT Data
-        # numBytes = self.bt.in_waiting
-        # if numBytes > 0:
-        #     self._btReceiveStr = self._btReceiveStr + \
-        #         self.bt.read(numBytes).decode()
+        numBytes = self.bt.in_waiting
+        if numBytes > 0:
+            self._btReceiveStr = self._btReceiveStr + \
+                self.bt.read(numBytes).decode()
         # parse BT data
         data = self._btReceiveStr
         if len(data) == 0:
@@ -213,14 +211,14 @@ class BTHandler:
             Clock.schedule_once(lambda dt: self._gui.connect_gui_update(
                 False, True, "Connecting..."), -1)
             sleep(.5)
-            # self.bt = serial.Serial(
-            #     port=self._port, baudrate=38400, timeout=.25)
+            self.bt = serial.Serial(
+                port=self._port, baudrate=38400, timeout=.25)
             Clock.schedule_once(lambda dt: self._gui.connect_gui_update(
                 True, False, f"Connected on {self._port}"), -1)
             print('connected')
-            # TODO: remove - testing - disable pid lock after being connected for a bit
-            Clock.schedule_once(
-                lambda dt: self._gui.pid_gui_update(1, 2, 3, True), .5)
+            # TO DO: remove - testing - disable pid lock after being connected for a bit
+            # Clock.schedule_once(
+            #     lambda dt: self._gui.pid_gui_update(1, 2, 3, True), .5)
 
             if (ENABLE_LOGGING):
                 self._open_logs()
@@ -230,7 +228,6 @@ class BTHandler:
             return True
         except:
             print("Bluetooth Connection Error")
-            self._connected = False
             Clock.schedule_once(lambda dt: self._gui.connect_gui_update(
                 False, False, "Could not connect"), -1)
             return False
@@ -244,17 +241,17 @@ class BTHandler:
             print('disconnecting')
             Clock.schedule_once(lambda dt: self._gui.connect_gui_update(
                 True, True, "Disconnecting..."), -1)
-            # self.bt.close()
+
+            self.bt.close()
+
             print("Closed BT COM Port")
             Clock.schedule_once(lambda dt: self._gui.connect_gui_update(
                 False, False, "Disconnected"), -1)
 
             if (ENABLE_LOGGING):
                 self._close_logs()
-
             self._connected = False
         except:
             print("Error Closing BT connection")
             Clock.schedule_once(lambda dt: self._gui.connect_gui_update(
                 False, False, "Error Disconnecting"), -1)
-            self._connected = True

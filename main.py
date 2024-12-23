@@ -21,15 +21,15 @@ class SprungSlider(MDSlider):
             self.value = 0
 
 
-class Toggle(MDRectangleFlatButton, MDToggleButton):
+class Toggle(MDRectangleFlatButton, MDToggleButton):  # type:ignore
     pass
 
 
-class MainGraph(Graph, MDWidget):
+class MainGraph(Graph, MDWidget):  # type:ignore
     pass
 
 
-class VoltGraph(Graph, MDWidget):
+class VoltGraph(Graph, MDWidget):  # type:ignore
     pass
 
 
@@ -43,9 +43,6 @@ class NumSpinner(MDBoxLayout):
             self.value = max(float(str), self.min)
         except:
             self.text = "{0:.2f}".format(self.value)
-
-
-startTime = time()
 
 
 class ControllerMain(MDWidget):
