@@ -79,8 +79,6 @@ class ControllerMain(MDWidget):
             self.cleanup_graph_data(0)
             self.btHandler.request_action(self.btHandler.connect)
 
-            Clock.schedule_interval(
-                lambda dt: self.print_console(f"t={time():.2f}"), 1)
         elif (state == 'normal'):
             self.btHandler.request_action(self.btHandler.disconnect)
 
@@ -112,7 +110,7 @@ class ControllerMain(MDWidget):
         self.btHandler.request_action(
             partial(self.btHandler.set_enable, state == 'down'))
 
-    def enable_gui_update(self, enabled):
+    def gui_update_en(self, enabled):
         self.enableObj.state = 'down' if enabled else 'normal'
 
     def trim_changed(self, spinner: NumSpinner):
@@ -129,6 +127,7 @@ class ControllerMain(MDWidget):
             return self._joystick_val, 0
 
     def print_console(self, text: str):
+        """Adds text to the GUI console as a new line"""
         self.consoleText += "\n"
         self.consoleText += text
         # clip length of console
