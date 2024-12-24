@@ -104,7 +104,6 @@ class ControllerMain(MDWidget):
         self.kI = ki
         self.kD = kd
         self.pidLocked = not enable_input
-        print("unlocking pid")
 
     def enable_pressed(self, state):
         self.btHandler.request_action(
@@ -148,8 +147,8 @@ class ControllerMain(MDWidget):
             self.voltGraph.xmax = max
             self.mainGraph.xmin = min
             self.mainGraph.xmax = max
-        if (len(self.volt_plot.points) > 600):
-            self.cleanup_graph_data(15*20)
+        if (len(self.volt_plot.points) > 30*100):
+            self.cleanup_graph_data(15*100)
 
     def cleanup_graph_data(self, keep_count):
         if (keep_count == 0):
@@ -162,14 +161,12 @@ class ControllerMain(MDWidget):
 
     def initGraphs(self):
         self.volt_plot = MeshLinePlot(color=[1, 0, 0, 1])
-        # self.voltLine.points = [(x/20, .1) for x in range(300)]
         self.voltGraph = VoltGraph()
         self.voltGraph.add_plot(self.volt_plot)
         self.graphStack.add_widget(self.voltGraph)
+
         self.set_angle_plot = MeshLinePlot(color=[1, 1, 0, 1])
-        # self.setDegLine.points = [(x/20, 90) for x in range(300)]
         self.act_angle_plot = MeshLinePlot(color=[1, 0, 0, 1])
-        # self.actDegLine.points = [(x/20, 0) for x in range(300)]
         self.mainGraph = MainGraph()
         self.mainGraph.add_plot(self.set_angle_plot)
         self.mainGraph.add_plot(self.act_angle_plot)

@@ -12,7 +12,7 @@ from typing import Callable
 from main import ControllerMain
 from enum import Enum
 
-ENABLE_LOGGING = False
+ENABLE_LOGGING = True
 
 
 class En_States(Enum):
@@ -20,9 +20,6 @@ class En_States(Enum):
     REQ_DISABLE = 1
     REQ_ENABLE = 2
     ENABLED = 3
-
-
-startTime = time()
 
 
 class BTHandler:
@@ -38,7 +35,9 @@ class BTHandler:
         self._port = port
 
         self._lastPacketTime = time()
-        self._btReceiveStr = ""
+
+        self._pidWriter = None
+        self._dataWriter = None
         # Start handler Thread
         self._joy_send_interval = loopSpeed
         self._workerThread = Thread(target=self._btWorker)
@@ -74,7 +73,7 @@ class BTHandler:
                 if (time() > nextJoySend):
                     self._send_joystick()
                     nextJoySend = time()+self._joy_send_interval
-                
+
             # if main thread is exiting(window closed)
             if self._exit.is_set():
                 self.disconnect()
@@ -136,6 +135,7 @@ class BTHandler:
                 "U": self._parseU,
                 "P": self._parseP,
                 "M": self._parseM,
+                "V": lambda packet: self.print_console(packet)
             }
             try:
                 parser = parseSwitch.get(
@@ -147,18 +147,18 @@ class BTHandler:
             endInd = data.find("/")
         self._btReceiveStr = data
 
-    def _parseU(self, packet: str):
+    def _parseU(self, packet: str) -> None:
         packet = packet[1:-1]
         tokens = packet.split(",")
         dat = [float(val) for val in tokens]
         dat[0] /= 1000
 
-        botReportsEnable = bool(dat[4])
+        botReportsEnable = bool(dat[1])
         if (self._dataWriter):
             self._dataWriter.writerow(dat)
 
         Clock.schedule_once(lambda dt: self._gui.graph_gui_update(
-            dat[0], dat[1], dat[2], dat[3]), -1)
+            dat[0], dat[2], dat[3], dat[4]), -1)
 
         # Update state and make sure it is displayed properly
         if self._enable == En_States.REQ_ENABLE and botReportsEnable:
@@ -170,42 +170,43 @@ class BTHandler:
                 lambda dt: self._gui.gui_update_en(False), -1)
             self._enable = En_States.DISABLED
 
-    def _parseP(self, packet: str):
+    def _parseP(self, packet: str) -> None:
         packet = packet[1:-1]
         tokens = packet.split(",")
         pidVals = [float(val) for val in tokens]
         pidVals[0] /= 1000
-        self.print_console(str(pidVals))
-        # if (self._pidWriter):
-        #     self._pidWriter.writerow(pidVals)
+        self.print_console(f"REC Bot PID")
+        if (self._pidWriter):
+            self._pidWriter.writerow(pidVals)
 
         Clock.schedule_once(lambda dt: self._gui.pid_gui_update(
             pidVals[1], pidVals[2], pidVals[3], True), -1)
 
-    def _parseM(self, packet: str):
+    def _parseM(self, packet: str) -> None:
         """Print received message to GUI console"""
         Clock.schedule_once(
-            lambda dt: self._gui.print_console("BOT> "+ packet[1:-1]), -1)
+            lambda dt: self._gui.print_console("BOT> " + packet[1:-1]), -1)
 
-    def connect(self):
+    def connect(self) -> bool:
         """Opens BT Serial Connection - DO NOT CALL DIRECTLY, load into queue\n
         Returns true if connection was successful"""
         if (self._connected):
             return
         try:
-            print('connecting...')
+            self.print_console('connecting...')
             Clock.schedule_once(lambda dt: self._gui.connect_gui_update(
                 False, True, "Connecting..."), -1)
             self.bt = serial.Serial(
                 port=self._port, baudrate=38400, timeout=.25)
             Clock.schedule_once(lambda dt: self._gui.connect_gui_update(
                 True, False, f"Connected on {self._port}"), -1)
-            print('connected')
+            self.print_console('connected')
 
             if (ENABLE_LOGGING):
                 self._open_logs()
 
             sleep(.1)
+            self._btReceiveStr = ""
             self._lastPacketTime = time()
             self._connected = True
             self._req_PID()
@@ -216,7 +217,7 @@ class BTHandler:
                 False, False, "Could not connect"), -1)
             return False
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         """Closes BT connection\n
         Returns true if disconnection is sucessful."""
         if (not self._connected):
@@ -226,7 +227,7 @@ class BTHandler:
             Clock.schedule_once(lambda dt: self._gui.connect_gui_update(
                 True, True, "Disconnecting..."), -1)
 
-            ## Always send a disable command to ensure bot shuts down
+            # Always send a disable command to ensure bot shuts down
             self.set_enable(False)
             self.bt.close()
 
@@ -242,7 +243,7 @@ class BTHandler:
             Clock.schedule_once(lambda dt: self._gui.connect_gui_update(
                 False, False, "Error Disconnecting"), -1)
 
-    def _open_logs(self):
+    def _open_logs(self)->None:
         dateStr = datetime.now().strftime('%m-%d-%y')
         timeStr = datetime.now().strftime('%H.%M.%S')
         folderName = '.\\logData\\'+dateStr
@@ -253,9 +254,11 @@ class BTHandler:
         self._pidFile = open(
             folderName+'\\'+timeStr+'-pid.csv', 'w', newline='')
         self._dataWriter = csv.writer(self._datFile)
+        self._dataWriter.writerow(
+            ["#Millis", "enable", "Voltage", "setAngle", "actAngle"])
         self._pidWriter = csv.writer(self._pidFile)
 
-    def _close_logs(self):
+    def _close_logs(self)->None:
         try:
             self._datFile.close()
             self._pidFile.close()

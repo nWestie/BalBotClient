@@ -14,7 +14,7 @@ if not filename:
 
 print('Opened: ')
 print(filename, '\n')
-b = np.loadtxt(filename, dtype=np.float32, delimiter=',', usecols=(0,2,3))
+b = np.loadtxt(filename, dtype=np.float32, delimiter=',', usecols=(0,3,4))
 plt.plot(b[:,0],b[:,1])
 plt.plot(b[:,0],b[:,2])
 plt.show()
