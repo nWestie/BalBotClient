@@ -143,7 +143,7 @@ class BTHandler:
                 parser(packet)
                 self._lastPacketTime = time()
             except:
-                self.print_console('Bad Packet, ignoring')
+                self.print_console(f'ERR on packet: {packet}')
             endInd = data.find("/")
         self._btReceiveStr = data
 
@@ -175,9 +175,9 @@ class BTHandler:
         tokens = packet.split(",")
         pidVals = [float(val) for val in tokens]
         pidVals[0] /= 1000
-        print(pidVals)
-        if (self._pidWriter):
-            self._pidWriter.writerow(pidVals)
+        self.print_console(str(pidVals))
+        # if (self._pidWriter):
+        #     self._pidWriter.writerow(pidVals)
 
         Clock.schedule_once(lambda dt: self._gui.pid_gui_update(
             pidVals[1], pidVals[2], pidVals[3], True), -1)
@@ -185,7 +185,7 @@ class BTHandler:
     def _parseM(self, packet: str):
         """Print received message to GUI console"""
         Clock.schedule_once(
-            lambda dt: self._gui.print_console(packet[1:-1]), -1)
+            lambda dt: self._gui.print_console("BOT> "+ packet[1:-1]), -1)
 
     def connect(self):
         """Opens BT Serial Connection - DO NOT CALL DIRECTLY, load into queue\n
@@ -226,6 +226,8 @@ class BTHandler:
             Clock.schedule_once(lambda dt: self._gui.connect_gui_update(
                 True, True, "Disconnecting..."), -1)
 
+            ## Always send a disable command to ensure bot shuts down
+            self.set_enable(False)
             self.bt.close()
 
             print("Closed BT COM Port")
