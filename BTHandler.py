@@ -15,13 +15,6 @@ from enum import Enum
 ENABLE_LOGGING = True
 
 
-class En_States(Enum):
-    DISABLED = 0
-    REQ_DISABLE = 1
-    REQ_ENABLE = 2
-    ENABLED = 3
-
-
 class BTHandler:
     """Controls all communication between GUI and Robot\n
     The interface must provide/request the data it needs using set() and get() methods"""
@@ -31,7 +24,7 @@ class BTHandler:
         self._gui: ControllerMain = gui
         self._exit = Event()
         self._connected = False
-        self._enable: En_States = En_States.DISABLED
+        self._last_enable: bool = False
         self._port = port
 
         self._lastPacketTime = time()
@@ -107,7 +100,6 @@ class BTHandler:
 
     def set_enable(self, enable):
         """MUST be called through the request_action. Enables or disables the robot"""
-        self._enable = En_States.REQ_ENABLE if enable else En_States.REQ_DISABLE
         self._send("E" if enable else "D")
 
     def _recieveBtData(self):
@@ -120,11 +112,7 @@ class BTHandler:
         data = self._btReceiveStr
         if len(data) == 0:
             return
-        # if (not data[0].isalpha()):
-        #     for i, c in enumerate(data):
-        #         if c.isalpha():
-        #             data = data[i:]
-        #             break
+        
         endInd = data.find("/")
         while endInd != -1:  # while there are more fully sent packets
             # Remove packet from datastream
@@ -153,22 +141,18 @@ class BTHandler:
         dat = [float(val) for val in tokens]
         dat[0] /= 1000
 
-        botReportsEnable = bool(dat[1])
         if (self._dataWriter):
             self._dataWriter.writerow(dat)
 
         Clock.schedule_once(lambda dt: self._gui.graph_gui_update(
             dat[0], dat[2], dat[3], dat[4]), -1)
 
-        # Update state and make sure it is displayed properly
-        if self._enable == En_States.REQ_ENABLE and botReportsEnable:
+        # Update GUI button if enable state changes
+        bot_enabled = bool(dat[1])
+        if bot_enabled != self._last_enable:
             Clock.schedule_once(
-                lambda dt: self._gui.gui_update_en(True), -1)
-            self._enable = En_States.ENABLED
-        elif not botReportsEnable and self._enable != En_States.DISABLED:
-            Clock.schedule_once(
-                lambda dt: self._gui.gui_update_en(False), -1)
-            self._enable = En_States.DISABLED
+                lambda dt: self._gui.gui_update_en(bot_enabled), -1)
+        self._last_enable = bot_enabled
 
     def _parseP(self, packet: str) -> None:
         packet = packet[1:-1]
@@ -191,7 +175,7 @@ class BTHandler:
         """Opens BT Serial Connection - DO NOT CALL DIRECTLY, load into queue\n
         Returns true if connection was successful"""
         if (self._connected):
-            return
+            return True
         try:
             self.print_console('connecting...')
             Clock.schedule_once(lambda dt: self._gui.connect_gui_update(
