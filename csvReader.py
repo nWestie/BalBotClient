@@ -11,10 +11,10 @@ if not filename:
     filename = askopenfilename(initialdir='logData',filetypes=[("CSV", ".csv")])
     if(not filename):
         exit()
-
+plt.style.use('dark_background')
 print('Opened: ')
 print(filename, '\n')
-b = np.loadtxt(filename, dtype=np.float32, delimiter=',', usecols=(0,3,4))
-plt.plot(b[:,0],b[:,1])
-plt.plot(b[:,0],b[:,2])
+b = np.loadtxt(filename, dtype=np.float32, delimiter=',', usecols=(0,1,2))
+plt.plot(b[:,0],b[:,1], c='b')
+plt.plot(b[:,0],b[:,2], c='g')
 plt.show()

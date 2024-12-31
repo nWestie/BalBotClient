@@ -2,3 +2,4 @@ __pycache__
 logData
 StartController.lnk
 .pdm-python
+serial_logs

@@ -8,16 +8,9 @@ def main():
         print("Connecting...")
         with serial.Serial(port="COM6", baudrate=38400, timeout=0.25) as bt:
             print("Connected")
-            startTime = time()
-            lastSendTime = time()
-            while time() - startTime < 20:
-        
-                print(bt.readall().decode())
-
-                if time() - lastSendTime > 1:
-                    bt.write(f"testing: {int(time()-startTime)} /".encode("ascii"))
-                    lastSendTime = time()
-        
+            while True:
+                print(bt.read_until(b'/').decode())
+                
         print("Disconnected")
     except:
         print("Bluetooth Connection Error")
