@@ -104,11 +104,15 @@ class BTHandler:
 
     def _recieveBtData(self):
         # Read BT Data
-        numBytes = self.bt.in_waiting
-        if numBytes > 0:
-            self._btReceiveStr = self._btReceiveStr + \
-                self.bt.read(numBytes).decode()
-        # parse BT data
+        try:
+            numBytes = self.bt.in_waiting
+            if numBytes > 0:
+                self._btReceiveStr = self._btReceiveStr + \
+                    self.bt.read(numBytes).decode()
+            # parse BT data
+        except Exception as e:
+            self.print_console("Err parsing BT data")
+            print(e)
         data = self._btReceiveStr
         if len(data) == 0:
             return
@@ -139,6 +143,9 @@ class BTHandler:
         packet = packet[1:-1]
         tokens = packet.split(",")
         dat = [float(val) for val in tokens]
+        if(len(dat)!=5):
+            self.print_console(f"Bad U packet: {packet}")
+            return
         dat[0] /= 1000
 
         if (self._dataWriter):
@@ -213,20 +220,19 @@ class BTHandler:
 
             # Always send a disable command to ensure bot shuts down
             self.set_enable(False)
+            if (ENABLE_LOGGING):
+                self._close_logs()
+                
             self.bt.close()
+            self._connected = False
 
             print("Closed BT COM Port")
             Clock.schedule_once(lambda dt: self._gui.connect_gui_update(
                 False, False, "Disconnected"), -1)
-
-            if (ENABLE_LOGGING):
-                self._close_logs()
-            self._connected = False
         except:
             print("Error Closing BT connection")
             Clock.schedule_once(lambda dt: self._gui.connect_gui_update(
                 False, False, "Error Disconnecting"), -1)
-
     def _open_logs(self)->None:
         dateStr = datetime.now().strftime('%m-%d-%y')
         timeStr = datetime.now().strftime('%H.%M.%S')

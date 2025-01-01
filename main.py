@@ -95,7 +95,6 @@ class ControllerMain(MDWidget):
             self.pidLocked = True
 
     def sendPID_pressed(self, save=False):
-
         self.btHandler.request_action(
             partial(self.btHandler.sendPID, self.kP, self.kI, self.kD, save))
 
